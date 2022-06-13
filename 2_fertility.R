@@ -1,12 +1,11 @@
 #Coded by: Brian Buh
 #Started on: 02.06.2022
-#Last Updated: 
+#Last Updated: 13.06.2021
 
 library(tidyverse)
 library(haven)
 library(lubridate)
 library(cowplot)
-
 
 ###########################################################################
 # Extract the BHPS fertility histories ------------------------------------
@@ -40,7 +39,7 @@ fert_transform <- bhpsxwave %>%
   unite(child3dob, c(child3m, child3yr), sep = "-") %>% 
   mutate(child3dob = parse_date_time(child3dob, "my"))
 
-##It appears the quickest way to transform from long to wide is just simple to make seperate dataset for each birth and rebindthem together
+##It appears the quickest way to transform from long to wide is just simple to make separate dataset for each birth and rebind them together
 
 ft1 <- fert_transform %>% 
   select(-child2dob, -child3dob) %>% 
@@ -268,12 +267,58 @@ combined_child4 <-
   mutate(check = a_childno - bno) %>% 
   ungroup()
 
-
 saveRDS(combined_child4, file = "fertukhls.rds")
 fertukhls <- file.choose()
 fertukhls <- readRDS(fertukhls)
 
 
+###########################################################################
+# Combine BHPS & UKHLS Fertility ------------------------------------------
+###########################################################################
+
+# I need a common set of variables for both BHPS & UKHLS:
+## pidp, pid, wave, hhorig, sex, dob, kdob, bno
+### Note: Because of the nature of abstracting fertility histories, BHPS does not have a set wave variable
+
+
+# Step 1: Remove unneeded variables and rename to standardize
+
+## - BHPS
+### - Interviews start in September of each year in the BHPS, lasting about 5 months
+#### - Births from Sept. to Jan will be set to the corresponding yearly wave, Feb- Aug the next wave
+fertbhps2 <- fertbhps %>%
+  select(pidp, pid, hhorig, sex, dob, kdob, bno) %>%
+  mutate(year = year(ymd(kdob))) %>% #year is extracted from "kdob" to find which year the interview occurred in
+  rename("dummywave" = "year") %>%
+  mutate(dummywave = dummywave- 1990,
+         dummywave = ifelse(dummywave <= 0, 1, dummywave)) %>% #The wave now corresponds with the calendar year in which the interview occurred
+  mutate(month = month(ymd(kdob)),
+         monthadj = ifelse(month == 1, NA, ifelse(month <= 8, 1, 0)),
+         monthadj = ifelse(is.na(monthadj), 0, monthadj), #This allows for births from Feb - Aug to be discounted as the previous wave
+         wave = dummywave - monthadj,
+         wave = ifelse(wave == 0, 1, wave)) %>% #All births before the first interview are counted as wave 1
+  select(pidp, pid, wave, hhorig, sex, dob, kdob, bno)
+
+fertbhps2 %>% count(dummywave)
+
+## - UKHLS
+fertukhls2 <- fertukhls %>%
+  select(pidp, pid, wave, hhorig, sex, dob, kdob, bno) %>%
+  rename("ukhlswave" = "wave") %>%
+  mutate(wave = ukhlswave + 18) %>%
+  relocate(wave, .after = "pid")
+
+## - Combined
+allfert <- 
+  bind_rows(fertukhls2, fertbhps2) %>%
+  filter(!is.na(hhorig)) %>%
+  arrange(pidp, wave)
+### - Note: this df does not have "wave" variable for BHPS respondents
+
+
+saveRDS(allfert, file = "allfert.rds")
+allfert <- file.choose()
+allfert <- readRDS(allfert)
 
 
 
@@ -282,21 +327,7 @@ fertukhls <- readRDS(fertukhls)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+###############################################################################
 
 
 #Step 3

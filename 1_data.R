@@ -215,6 +215,7 @@ k_hhresp <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_Special
 #xwavedata
 xwave <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_wx/xwavedat_protect.dta")
 
+
 ###########################################################################
 # Parent data (Alita Nandi) -----------------------------------------------
 ###########################################################################

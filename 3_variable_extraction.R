@@ -190,7 +190,6 @@ indvar <- c("hid", "hidp", "hhorig", "sex", "birthm", "birthy", "age_dv", "istrt
            "xpchcf", "xpchc", "f135", #These are childcare cost variables
            "f139", #housing benefit
            "plbornc", "gor_dv", "mlstat", "jbstat", "qfedhi") #controls
-            #Missing are any of the variables about SES or Education
 
 #Some variables are not included in wave 1: "birthm", "birthy", "istrtdaty"
 indvar1 <- c("hid", "hidp", "hhorig", "sex", "age_dv", "istrtdatm", #basic individual variables
@@ -198,7 +197,6 @@ indvar1 <- c("hid", "hidp", "hhorig", "sex", "age_dv", "istrtdatm", #basic indiv
             "xpchcf", "xpchc", "f135", #These are childcare cost variables
             "f139", #housing benefit
             "plbornc", "gor_dv", "mlstat", "jbstat", "qfedhi") #controls
-#Missing are any of the variables about SES or Education
 
 w1indvar <- paste0('ba_', indvar1)
 
@@ -243,7 +241,8 @@ ba_ind <- ba_indresp %>%
   mutate(wave = 1) %>% 
   mutate(birthm = NA) %>% 
   mutate(birthy = NA) %>% 
-  mutate(istrtdaty = NA)
+  mutate(istrtdaty = NA) %>% 
+  mutate(age_dv = NA)
 
 
 bb_ind <- bb_indresp %>% 
@@ -352,8 +351,14 @@ ind_bhps <-
   bind_rows(., br_ind) %>% 
   relocate("wave", .after = "pid") %>%
   ungroup() %>%  #Note: arrange doesn't work here since it appears that each "hid" is unique to each wave
-  arrange(pidp, wave)
-
+  arrange(pidp, wave) %>% 
+  group_by(pidp) %>% 
+  fill(birthm, .direction = "up") %>% 
+  fill(birthy, .direction = "up") %>% 
+  ungroup() %>% 
+  mutate(age_dv = ifelse(wave == 1 & birthm <=8, 0, ifelse(wave ==1 & birthm >= 9, 1, age_dv)),
+         age_dv = ifelse(wave == 1, (age_dv + 1990) - birthy, age_dv))
+  
 saveRDS(ind_bhps, file = "ind_bhps.rds")
 
 
@@ -471,7 +476,7 @@ saveRDS(indhhbhps, file = "indhhbhps.rds")
 
 #Sorting out needed variables from indresp
 #Changes in these lists allow for much quick adding and subtracting variables
-wave_varhh <- c("hidp", "fihhmnnet3_dv", "fihhmnnet4_dv", "houscost1_dv", "xpmg", "rent", "rentg", "rentgrs_dv", "hsownd", "tenure_dv", "hsrooms", "hsbeds")
+wave_varhh <- c("hidp", "fihhmnnet3_dv", "fihhmnnet4_dv", "houscost1_dv", "houscost2_dv", "xpmg", "rent", "rentg", "rentgrs_dv", "hsownd", "tenure_dv", "hsrooms", "hsbeds")
 
 #Add the wave prefix to the variable list
 w1_varhh <- paste0('a_', wave_varhh)
@@ -496,7 +501,7 @@ w10_varhh <- paste0('j_', wave_varhh)
 
 w11_varhh <- paste0('k_', wave_varhh)
 
-hhcol_order <- c("hidp", "wave", "fihhmnnet3_dv", "fihhmnnet4_dv", "houscost1_dv", "xpmg", "rent", "rentg", "rentgrs_dv", "hsownd", "tenure_dv", "hsrooms", "hsbeds")
+hhcol_order <- c("hidp", "wave", "fihhmnnet3_dv", "fihhmnnet4_dv", "houscost1_dv", "houscost2_dv", "xpmg", "rent", "rentg", "rentgrs_dv", "hsownd", "tenure_dv", "hsrooms", "hsbeds")
 
 #Preparing the variables for merging
 a_hh <- a_hhresp %>% 
@@ -688,10 +693,10 @@ saveRDS(ind_ukhls, file = "ind_ukhls.rds")
 # Combined dataset --------------------------------------------------------
 # -------------------------------------------------------------------------
 
-ind_ukhls <- ind_ukhls %>%
-  # select(-ukborn.x, -plbornc.x) %>%
-  rename("ukborn" = "ukborn.y") %>%
-  rename("plbornc" = "plbornc.y")
+# ind_ukhls <- ind_ukhls %>%
+#   # select(-ukborn.x, -plbornc.x) %>%
+#   rename("ukborn" = "ukborn.y") %>%
+#   rename("plbornc" = "plbornc.y")
 
 indhhukhls <- left_join(ind_ukhls, hh_ukhls, by= c("hidp","wave")) %>% 
   arrange(pidp, wave) %>%

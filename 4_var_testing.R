@@ -1,10 +1,14 @@
 #Coded by: Brian Buh
 #Started on: 20.06.2022
-#Last Updated: 28.07.2021
+#Last Updated: 29.07.2021
 
 library(tidyverse)
 library(haven)
 library(lubridate)
+
+#Notes for the testing process are saved in the docx file "variable_testing_creation_imputation"
+
+
 
 ### What's been done?
 # Outcome: Birth events exists in the correct waves as "kdob"
@@ -230,6 +234,7 @@ ggsave("current_annual_bhps_diff_1SD_S4_08-07-2022.png")
 # In order to create a housing cost measure that best captures the true cost the following steps must be done:
 #   1. After much examination, the most reliable measure appears to be "xphsn" for net housing costs although see notes on complications
 #   2. If xpmg, rent, rentg_bh are NA, xphsn = 0, and tenure_dv != 1, then it is falsely reported as 0 even though all information is missing, Change these to NA
+#   3. Similar to UKHLS, sometimes the net rent in "rent" is lower then the number in "xphsn". If the number is lower replace it.
 
 
 hcbhps <- indhhbhps %>% 
@@ -238,20 +243,31 @@ hcbhps <- indhhbhps %>%
          hcost = ifelse(hcost == -9, NA, hcost),
          xphsg = ifelse(xphsg == -9 | xphsg == -7, NA, xphsg),
          xpmg = ifelse(xpmg < 0, NA, xpmg),
-         rent = ifelse(rent == -3, 0, rent), #"-3" is coded for 100% rent rebate
+         rent = ifelse(rent == -3 | rent == -4, 0, rent), #"-3" is coded for 100% rent rebate; "-4" is coded as some other one off rent free
          rent = ifelse(rent < 0, NA, rent),
-         rentg_bh = ifelse(rentg_bh < 0, NA, rentg_bh)) %>%
+         rentg_bh = ifelse(rentg_bh < 0, NA, rentg_bh),
+         tenure_dv = ifelse(tenure_dv < 0, NA, tenure_dv),
+         hsownd_bh = ifelse(hsownd_bh < 0, NA, hsownd_bh)) %>%
   filter(wave != 1) %>% #I have to remove Wave 1, more than 50% of all housing cost variables are missing or wrong
   mutate(hc = xphsn,
-         hc = ifelse(is.na(xpmg) & is.na(rent) & is.na(rentg_bh) & hc == 0 & tenure_dv != 1, NA, hc))
+         hc = ifelse(is.na(xpmg) & is.na(rent) & is.na(rentg_bh) & hc == 0 & tenure_dv != 1, NA, hc),
+         hc2 = ifelse(rent < hc, rent, hc),
+         hc2 = ifelse(is.na(hc2), hc, hc2)) %>%
+  select(-hc) %>%
+  rename("hc" = "hc2")
 
 #Many of the inconsistencies with the "xphsn" appear to come from Wave 1
 nacount <- hcbhps %>% count(wave, is.na(xphsn))
-#After looking at the count data, 5,346 NA (47.3% of all NA are from wave 1)
+#After looking at the count data, 5,346 NA (47.3% of all NA are from wave 1). Also 52.1% of Wave 1 hc are NA
 nacount1 <- hcbhps %>% mutate(oldage = age_dv >=46) %>%  count(wave, oldage, is.na(xphsn))
 #How many NA come from other housing information (tenure) also missing?
 nacount2 <- hcbhps %>% count(tenure_dv, is.na(xphsn))
 #4,455 NA come from when tenure is also missing; 2292 comes from owned outright, 3433 come from local authority rent
+#Owned outright is hc = 0, but local authority rent is a much trickier issue because of housing benefit
+#Finally, how many NA are in my final hc measure?
+hcbhps %>% count(is.na(hc))
+#There are 9,220 NA (4.0%)
+
 
 # Take away: 
 # 1.	If xphsn is missing and there are extremely low numbers in either xpmg, rent, or rentg_bh but a much more normal number in xphsg, assume that xphsg is the closest to the true net housing cost
@@ -260,13 +276,6 @@ nacount2 <- hcbhps %>% count(tenure_dv, is.na(xphsn))
 # 3.	If rent = hcost, but xphsn is higher, it can be assumed that the true net cost including benefit has not be given. Be careful here!!!!
 # 4.	A lot of the mismatches occur in wave 1 of the BHPS. How many wave 1 xphsn are missing? There are 5,346 NA in wave 1 which comprises 47.3% of all NA for the xphsn values and 52.1% of all measures in wave 1. 
 # 5.	There are many more odd numbers for older individuals. (65+). For NA values, more are concentrated in higher ages.
-
-
-
-
-
-
-
 
 
 
@@ -374,17 +383,126 @@ hcukhls3 %>% count(tooold)
 #Most of those who pay 0 rent are too old for the sample; 141,599 (78.5%)
 
 
+###########################################################################
+# Testing cross survey consistency ----------------------------------------
+###########################################################################
+
+# In order to keep clarity I will recreate the income and housing cost variables here
+## Use DF indhhbhps & indhhukhls
+##Call created datasets here by the survey name and by the script number and section (43)
+
+#BHPS
+bhps43 <- indhhbhps %>% 
+  select(pidp, wave, hhorig, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hhyneti) %>% 
+  mutate(xphsn = ifelse(xphsn == -9 | xphsn == -8 | xphsn == -7, NA, xphsn),
+         xpmg = ifelse(xpmg < 0, NA, xpmg),
+         rent = ifelse(rent == -3 | rent == -4, 0, rent), #"-3" is coded for 100% rent rebate; "-4" is coded as some other one off rent free
+         rent = ifelse(rent < 0, NA, rent),
+         rentg_bh = ifelse(rentg_bh < 0, NA, rentg_bh),
+         tenure_dv = ifelse(tenure_dv < 0, NA, tenure_dv),
+         hsownd_bh = ifelse(hsownd_bh < 0, NA, hsownd_bh),
+         survey = "bhps") %>%
+  filter(wave != 1) %>% #I have to remove Wave 1, more than 50% of all housing cost variables are missing or wrong
+  mutate(hc = xphsn,
+         hc = ifelse(is.na(xpmg) & is.na(rent) & is.na(rentg_bh) & hc == 0 & tenure_dv != 1, NA, hc),
+         hc2 = ifelse(rent < hc, rent, hc),
+         hc2 = ifelse(is.na(hc2), hc, hc2)) %>%
+  select(-hc) %>%
+  rename("hc" = "hc2") %>%
+  rename("hsownd" = "hsownd_bh") %>%
+  mutate(hhyneti = ifelse(hhyneti < 0, NA, hhyneti),
+         hhinc = hhyneti/12) %>%
+  select(-xphsn, -xpmg, -rent, -rentg_bh, -hhyneti)
+
+
+#UKHLS
+ukhls43 <- indhhukhls %>%
+  select(pidp, wave, hhorig, sex, age_dv, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, fihhmnnet3_dv) %>%
+  mutate(rent2 = ifelse(rent < 0, NA, rent),
+         rent2 = ifelse(rent2 > houscost1_dv, NA, rent2),
+         hc = ifelse(!is.na(rent2), rent2, houscost1_dv),
+         tenure_dv = ifelse(tenure_dv < 0, NA, tenure_dv),
+         hsownd = ifelse(hsownd < 0, NA, hsownd),
+         rentgrs_dv = ifelse(rentgrs_dv == -8, NA, rentgrs_dv),
+         hc = ifelse(is.na(rentgrs_dv) & hsownd != 1 & hsownd != 5 & hc == 0, NA, hc),
+         survey = "ukhls") %>%
+  rename("hhinc" = "fihhmnnet3_dv") %>%
+  select(-houscost1_dv, -rent, -rentgrs_dv, -rent2)
+
+#Combined
+# I will keep only those individuals who were in both BHPS and UKHLS and the waves that are three on each side to compare (waves 16, 17, 18, 20, 21)
+##Note: Individuals from BHPS who continued were not in USoc Wave 1 (wave 19) since they did BHPS 18
+both43 <- 
+  bind_rows(bhps43, ukhls43) %>%
+  arrange(pidp, wave) %>%
+  filter(hhorig ==3 | hhorig == 4 | hhorig == 5, wave == 16 | wave == 17 | wave == 18 | wave == 20 | wave == 21) %>%
+  mutate(ukhlsdummy = ifelse(survey == "ukhls", 1, NA)) %>% #The next step help remove individuals who did not continue to UKHLS
+  group_by(pidp) %>%
+  fill(ukhlsdummy, .direction = "up") %>%
+  ungroup() %>%
+  filter(ukhlsdummy == 1, age_dv < 46) %>%
+  mutate(ratio = hc/hhinc,
+         ratiodummy = ifelse(ratio < 0 | ratio > 1, 1, 0))
+
+#How many ratios fall out of the 0 - 1 range (in this small sample)?
+both43 %>% count(ratiodummy)
+## 372 are out of the range (0.2%) and 877 (0.4%) are NA
+
+#Histogram of monthly hh income
+both43 %>%
+  filter(!is.na(hhinc), hhinc < 15000) %>%
+  # mutate(ratio = ifelse(ratio > 1, 1, ratio),
+  #        ratio = ifelse(ratio < 0, 0, ratio)) %>%
+  ggplot(aes(x = hhinc, fill = survey)) + 
+  geom_histogram()
+ggsave("hhinc_distribution_both43_s4_29-07-2022.png")
+
+#Histogram of monthly hc
+both43 %>%
+  filter(!is.na(hc), hc < 2000) %>%
+  ggplot(aes(x = hc, fill = survey)) + 
+  geom_histogram()
+ggsave("hc_distribution_both43_s4_29-07-2022.png")
+
+
+#Histogram of the distribution of ratios
+both43 %>%
+  filter(!is.na(ratio)) %>%
+  mutate(ratio = ifelse(ratio > 1, 1, ratio),
+         ratio = ifelse(ratio < 0, 0, ratio)) %>%
+  ggplot(aes(x = ratio, fill = survey)) + 
+  geom_histogram()
+ggsave("ratio_distribution_both43_s4_29-07-2022.png")
 
 
 
 
 
 
+# -------------------------------------------------------------------------
+# Old Code from script 5 looking at BHPS net versus gross housing costs----
+# -------------------------------------------------------------------------
 
 
+bhps5 %>% count(is.na(hc))
+bhps5 %>% count(is.na(ratiodummy))
+bhps5 %>% count(wave)
 
+# Capturing the difference between gross and net housing costs
+bhps5 %>% count(ngdiffdummy)
+## There are 21,874 observations with a difference between net and gross (9.2%) (13,034 NA or 5.5%)
+bhps5 %>% 
+  filter(!is.na(ngdiff), ngdiff <= 500, ngdiff >= -500) %>% 
+  ggplot(aes(x = ngdiff)) + 
+  geom_histogram()
+## There appears to be a distribution of differences between 0 and 350 pounds/month
 
-
+#Looking at the distribution of my ratio
+##There are 505 cases where the cost of housing exceeds hh income (aka ratio > 1)
+bhps5 %>% 
+  filter(!is.na(hc_inc), hc_inc <= 1) %>%
+  ggplot(aes(x = hc_inc)) + 
+  geom_histogram()
 
 
 

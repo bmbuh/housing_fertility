@@ -1,26 +1,29 @@
 #Coded by: Brian Buh
 #Started on: 16.06.2022
-#Last Updated: 29.07.2022
-
-###Note: this is left from the EPC draft. The variables need to be tested first and the controls need to be kept.
+#Last Updated: 02.08.2022
 
 library(tidyverse)
 library(haven)
 library(lubridate)
+library(survival) #for kmtest
+library(survminer) #for ggsurvplot
 # library(data.table) #Used for dates that dplyr automatically changes to numeric (not used in the end)
 
 #Use df: indhhbhps, indhhukhls, allfert
 
 # Sample selection:
-# 1. Remove BHPS Wave 1 (done in first code block "bhps5")!!!! This fucked up the parity count!!!!
-
-# 2. England, Wales, Scotland (no N.I.)
+# 1. Remove BHPS Wave 1 (done in third code block cball1)
+# 2. England, Wales, Scotland (no N.I. or Ethnic boost)
 # 3. individual ages 18-45 (done in third code block "cball")
 # 4. observations = 2+ (done in third code block "cball")
-# 5. Parity 0-3 
-## Filter 1 is done while cleaning the BHPS data individual. 
+# 5. Parity 0-3 (done in third code block "cball0")
+# 6. Clock errors (negative, too high, or NA) (done in third code block cball2)
+# 7. Event occurs in intermediate wave (Ind. 13) (more than 2 waves missing)
+# 8. Individuals (Ind. 14) who have large periods (more than 3 missing consecutive waves) 
+## Filter 1 is done in section 3 df = cball1
 ## Filter 2????
 ## Filter 3-5 is done after combining the surveys and adding fertility.
+## Filter 6-8 is done after analyzing the extent of the missing values (see notes in "sample_selection")
 
 
 ############################################################################
@@ -77,7 +80,7 @@ saveRDS(bhps5, file = "bhps5.rds")
 
 
 bhps5 %>% count(numobs)
-
+bhps5 %>% count(wave)
 
 
 
@@ -221,20 +224,111 @@ cball0 <- cball %>%
          clock = ifelse(is.na(clock), (year - kyear2) + 1, clock),
          event = ifelse(!is.na(kdob), 1, 0))
 
-
-
-str(cball0)
-
 saveRDS(cball0, file = "cball0.rds")
 
 summary(cball0$ratio)
 cball0 %>% count(parity)
 
+
+
+# The last dataframe takes a considerable amount of time to process. This continues the data cleaning process with a break to reduce errors
+#~ This is completed by steps in the dfs cball1, cball2  ~#
+## First, I remove all non wave pre-survey babies since my clock is complete
+## Second, I complete the sample selection and filtering
+### All observations with a baby before the first interview have wave = NA
+### I remove all wave 1 of BHPS observations due to the poor housing cost quality
+## Third, I test my clock
+### I can see I have some oddities: negative clocks or NA
+### I will remove clock numbers that are negative or larger than 27 (see notes for justification)
+### The clock NA comes from babies that come after the last interview. If they are less than 2 waves away, I will keep and impute, more than 2 I will remove
+
+cball1 <- cball0 %>% 
+  filter(!is.na(wave), wave != 1) %>% 
+  #This code block is for testing the clock, the lag and lead variables help determine how big at gaps
+  group_by(pidp) %>% 
+  mutate(lagwave = lag(wave),
+         leadwave = lead(wave),
+         wavegap = (leadwave - lagwave) - 1,
+         diffwave = wave - leadwave) %>% 
+  ungroup() 
+  
+#This is for testing the quality of the clock and event variables
+##The results are in the document "sample_selection"
+
+cball1 %>% count(numobs)
+
+# Testing for clock outliers
+test <- cball1 %>% count(clock)
+cball1 %>% count(clock < 0)
+filterneg <- cball1 %>% filter(clock < 0)
+cball1 %>% count(clock > 27)
+filterpos <- cball1 %>% filter(clock > 27)
+cball1 %>% count(is.na(clock))
+filterna <- cball1 %>% filter(is.na(clock))
+filterna %>% count(diffwave)
+
+#This is a quicker wave of making sure I keep certain observations with NA in the clock (baby after the last interview)
+filterna1 <- filterna %>% 
+  select(pidp, wave, diffwave) %>% 
+  mutate(nakeep = ifelse(diffwave == -1 | diffwave == -2 | diffwave == 0, 1, 0)) %>% 
+  select(-diffwave)
+
+
+#Testing for NA
+test2 <- cball1 %>% filter(event == 1, is.na(istrtdaty))
+test2 %>% count(wavegap, obsnum)
+
+
+#This df filters individuals with clock errors
+cball2 <- cball1 %>% 
+  left_join(., filterna1, by = c("pidp", "wave")) %>% 
+  group_by(pidp) %>% 
+  mutate(clockneg = ifelse(clock < 0, 1, NA),
+         clockpos = ifelse(clock > 27, 1, NA),
+         naevent = ifelse(event == 1 & is.na(istrtdaty), 1, NA), #naevent is events that happened between waves
+         largediff = ifelse(diffwave < -3, 1, NA)) %>% #largediff is for individuals that have huge gaps in their records before returning (10301 observations, 3.9% )
+  fill(nakeep, .direction = "updown") %>% 
+  fill(clockneg, .direction = "downup") %>% 
+  fill(clockpos, .direction = "downup") %>% 
+  fill(largediff, .direction = "updown") %>% 
+  ungroup() %>% 
+  #This filters out individuals with clock errors or "ind. 13" with gaps of larger than 2 waves when they experience an event
+  #There are also several individuals that simply miss many waves between surveys (similar to Ind 13 but they don't that we know of have a child)
+  filter(is.na(clockneg), is.na(clockpos), is.na(nakeep) | nakeep == 1, is.na(naevent), is.na(largediff), !is.na(clock)) %>% #Filter 6, 7, & 8
+  mutate(clock2 = clock + 1,
+         parity = as.character(parity))
+
+saveRDS(cball2, file = "cball2.rds")
+
+# Checking to make sure my filters worked correctly (make cball2 without the filters to see the power of the filters)
+cball2 %>% count(nakeep)
+cball2 %>% count(clockneg)
+cball2 %>% count(clockpos)
+cball2 %>% count(naevent)
+cball2 %>% count(diffwave)
+check <- cball2 %>% filter(diffwave == -3)
+cball2 %>% count(largediff)
+check <- cball2 %>%  #There is 2 obs with clock as NA still
+  group_by(pidp) %>% 
+  mutate(check = ifelse(is.na(clock), 1, 0)) %>% 
+  fill(check, .direction = "updown") %>% 
+  ungroup() %>% 
+  filter(check == 1)
+#Conclusion the filters remove 16.3% of total observations
+
+#Finally, let's see if my main analysis seems to make sense
+clockparitycheck <- cball2 %>% count(clock, event, parity)
+#As you would assume, the number of 2&3 children are more relative to 1 children at small numbers but that relationship changes as the number grows
+
+cball2 %>% count(clock, clock2)
+cball2 %>% count(is.na(ratio)) # 3.0% or 7633 of ratio are missing
+
+
 # -------------------------------------------------------------------------
 # Descriptive plots -------------------------------------------------------
 # -------------------------------------------------------------------------
 
-cball0 %>% 
+cball2 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   group_by(period, ratio_cat) %>%
   summarise(count = n()) %>% 
@@ -243,7 +337,7 @@ cball0 %>%
   geom_bar(stat = "identity") +
   facet_wrap(~period)
 
-cball0 %>% 
+cball2 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 
   group_by(parity, ratio_cat) %>%
   summarise(count = n()) %>% 
@@ -251,3 +345,26 @@ cball0 %>%
   ggplot(aes(x = ratio_cat, y = percent)) + 
   geom_bar(stat = "identity") +
   facet_wrap(~parity)
+
+
+# 1. Kaplan-Meier Test
+kmtest <- survfit(Surv(clock, clock2, event) ~ strata (parity), data = cball2, cluster = pidp)
+summary(kmtest)
+plot(kmtest)
+
+ggsurvplot(kmtest, size = 1,   # change line size
+           conf.int = TRUE,          # Add confidence interval
+           risk.table = TRUE,        # Add risk table
+           # risk.table.col = "strata",# Risk table color by groups
+           legend.labs = c("Parity 1", "Parity 2", "Parity 3"),    # Change legend labels
+           risk.table.height = 0.25, # Useful to change when you have multiple groups
+           ggtheme = theme_bw()      # Change ggplot2 theme
+           ) 
+ggsave("km_base_02-08-2022.png")
+
+# 2. Cox Proportional Hazard Model
+coxph <- coxph(formula = Surv(clock, clock2, event) ~ sex + age_dv + parity + period + ratio*parity, data = cball2, cluster = pidp, method = "breslow")
+summary(coxph)
+testph <- cox.zph(coxph)
+summary(testph)
+

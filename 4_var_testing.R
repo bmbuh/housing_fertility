@@ -11,14 +11,17 @@ library(lubridate)
 
 
 ### What's been done?
-# Outcome: Birth events exists in the correct waves as "kdob"
+# Outcome: 
+## Birth events exists in the correct waves as "kdob"
+## event variable called "event" created
 
 # Clock:
 ## Calculate the time since 18 for parity 1
-## Calculate the time since last birth for parity 2&3 - slightly trickier for birth before first interview
+## Calculate the time since last birth for parity 2&3
 
 # Explanatory:
 # Income and housing costs are present but need to be analyzed and imputed
+# The ratio of hc/inc called "ratio"
 # Period is done
 # Parity is done
 
@@ -37,9 +40,7 @@ library(lubridate)
 
 # 2. I need to deal with the LAD and the median/25% housing price per year (S5)
 
-# 3. I need to test the income and housing cost variables for systemic irregularities (S4)
-
-# 4. I need to impute missing income/hc data (S4/5/6)
+# 4. I need to impute missing income/hc data (S5/6)
 
 # 5. I need to look at the controls (S3)
 ## a. education needs to be harmonized to international scales (get it to the )
@@ -54,14 +55,10 @@ library(lubridate)
 ## f. activity status: (jbstat): full-time student, employed, unemployed, inactive (S5) (no need to code twice)
 ## g. Social class (this is frustrating!)
 ## h. Age-squared
-## i. cohort: this is just drived from birth year but do I need it?
+## i. cohort: this is just derived from birth year but do I need it?
 ## j. UK Born
 ### i. 
 
-# 6. The clock needs to be calculated (S5)
-## a. remove observations from before the first interview after calculating the clock
-
-# 7. Create an event variable (S5)
 
 
 

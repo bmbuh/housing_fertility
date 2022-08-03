@@ -226,9 +226,6 @@ cball0 <- cball %>%
 
 saveRDS(cball0, file = "cball0.rds")
 
-summary(cball0$ratio)
-cball0 %>% count(parity)
-
 
 
 # The last dataframe takes a considerable amount of time to process. This continues the data cleaning process with a break to reduce errors
@@ -252,10 +249,8 @@ cball1 <- cball0 %>%
          diffwave = wave - leadwave) %>% 
   ungroup() 
   
-#This is for testing the quality of the clock and event variables
+#These are for testing the quality of the clock and event variables
 ##The results are in the document "sample_selection"
-
-cball1 %>% count(numobs)
 
 # Testing for clock outliers
 test <- cball1 %>% count(clock)
@@ -264,15 +259,15 @@ filterneg <- cball1 %>% filter(clock < 0)
 cball1 %>% count(clock > 27)
 filterpos <- cball1 %>% filter(clock > 27)
 cball1 %>% count(is.na(clock))
-filterna <- cball1 %>% filter(is.na(clock))
-filterna %>% count(diffwave)
 
 #This is a quicker wave of making sure I keep certain observations with NA in the clock (baby after the last interview)
+filterna <- cball1 %>% filter(is.na(clock))
+filterna %>% count(diffwave)
+##!Make this df for the next step
 filterna1 <- filterna %>% 
   select(pidp, wave, diffwave) %>% 
   mutate(nakeep = ifelse(diffwave == -1 | diffwave == -2 | diffwave == 0, 1, 0)) %>% 
   select(-diffwave)
-
 
 #Testing for NA
 test2 <- cball1 %>% filter(event == 1, is.na(istrtdaty))
@@ -296,7 +291,38 @@ cball2 <- cball1 %>%
   #There are also several individuals that simply miss many waves between surveys (similar to Ind 13 but they don't that we know of have a child)
   filter(is.na(clockneg), is.na(clockpos), is.na(nakeep) | nakeep == 1, is.na(naevent), is.na(largediff), !is.na(clock)) %>% #Filter 6, 7, & 8
   mutate(clock2 = clock + 1,
-         parity = as.character(parity))
+         parity = as.character(parity),
+         sex = ifelse(sex < 0, NA, sex),
+         sex = as.character(sex),
+         sex = recode(sex,
+                      "1" = "Men",
+                      "2" = "Women"),
+         agesq = age_dv*age_dv) %>% 
+  group_by(pidp) %>% 
+  fill(sex, .direction = "downup") %>% #There are several sex that are NA (690)
+  ungroup() %>% 
+  filter(!is.na(sex)) %>% #43 observations sex is NA so they are removed
+  rename("age" = "age_dv") %>% 
+  mutate(ratio_cat2 = cut(ratio, 
+                         breaks = c(-0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 1),
+                         labels = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100")),
+         ratio_cat2 = fct_relevel(ratio_cat2, c("10-20",
+                                                "0",
+                                                "0.1-10",
+                                                "20-30",
+                                                "30-40",
+                                                "40-100"))) %>% 
+  mutate(ratio_cat3 = cut(ratio, 
+                          breaks = c(-0.1, 0.0, 0.15, 0.3, 0.45, 0.6, 1),
+                          labels = c("0", "0.1-15", "15-30", "30-45", "45-60", "60-100")),
+         ratio_cat3 = fct_relevel(ratio_cat3, c("15-30",
+                                                "0",
+                                                "0.1-15",
+                                                "30-45",
+                                                "45-60",
+                                                "60-100")))
+
+cball2 %>% count(ratio_cat3)
 
 saveRDS(cball2, file = "cball2.rds")
 
@@ -327,6 +353,11 @@ cball2 %>% count(is.na(ratio)) # 3.0% or 7633 of ratio are missing
 # -------------------------------------------------------------------------
 # Descriptive plots -------------------------------------------------------
 # -------------------------------------------------------------------------
+cball2 %>% 
+  filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
+  ggplot(aes(x = ratio)) + 
+  geom_histogram(bins = 10) 
+
 
 cball2 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
@@ -345,26 +376,3 @@ cball2 %>%
   ggplot(aes(x = ratio_cat, y = percent)) + 
   geom_bar(stat = "identity") +
   facet_wrap(~parity)
-
-
-# 1. Kaplan-Meier Test
-kmtest <- survfit(Surv(clock, clock2, event) ~ strata (parity), data = cball2, cluster = pidp)
-summary(kmtest)
-plot(kmtest)
-
-ggsurvplot(kmtest, size = 1,   # change line size
-           conf.int = TRUE,          # Add confidence interval
-           risk.table = TRUE,        # Add risk table
-           # risk.table.col = "strata",# Risk table color by groups
-           legend.labs = c("Parity 1", "Parity 2", "Parity 3"),    # Change legend labels
-           risk.table.height = 0.25, # Useful to change when you have multiple groups
-           ggtheme = theme_bw()      # Change ggplot2 theme
-           ) 
-ggsave("km_base_02-08-2022.png")
-
-# 2. Cox Proportional Hazard Model
-coxph <- coxph(formula = Surv(clock, clock2, event) ~ sex + age_dv + parity + period + ratio*parity, data = cball2, cluster = pidp, method = "breslow")
-summary(coxph)
-testph <- cox.zph(coxph)
-summary(testph)
-

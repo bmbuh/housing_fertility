@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 16.06.2022
-#Last Updated: 02.08.2022
+#Last Updated: 26.08.2022
 
 library(tidyverse)
 library(haven)
@@ -31,7 +31,8 @@ library(survminer) #for ggsurvplot
 ############################################################################
 
 bhps5 <- indhhbhps %>% 
-  select(pidp, wave, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hhyneti, gor_dv) %>% 
+  select(pidp, wave, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hsroom, lkmove, hhyneti, 
+         gor_dv, qfedhi, mlstat, spinhh, jbstat, plbornc, hgbiom, hgbiof) %>% 
   mutate(year = wave + 1990,
          hhyneti = ifelse(hhyneti < 0, NA, hhyneti),
          hhinc = (hhyneti/12),
@@ -59,28 +60,28 @@ bhps5 <- indhhbhps %>%
   select(-xphsn, -xpmg, -rent, -rentg_bh, -hhyneti) %>%
   #Variable creation
   group_by(pidp) %>% 
-  mutate(numobs = length(wave)) %>% 
+  mutate(numobs = length(wave),
+         qfedhi = ifelse(qfedhi < 0, NA, qfedhi)) %>% 
+  fill(qfedhi, .direction = "downup") %>% 
   ungroup() %>% 
-    mutate(ratio = hc/hhinc,
-           ratiodummy = ifelse(ratio < 0 | ratio > 1, 1, 0))
-  
+  mutate(ratio = hc/hhinc,
+         ratiodummy = ifelse(ratio < 0 | ratio > 1, 1, 0)) %>% 
+  mutate(isced97 = case_when(
+    qfedhi == 1 ~ "6",
+    qfedhi >= 2 & qfedhi <= 4 ~ "5",
+    qfedhi == 5 | qfedhi == 6  ~ "4",
+    qfedhi ==7 ~ "3",
+    qfedhi >= 8 & qfedhi <= 13 ~ "2")) %>% 
+  mutate(edu = case_when(
+    isced97 == 2 ~ "low",
+    isced97 == 3 | isced97 == 4  ~ "medium",
+    isced97 == 5 | isced97 == 6  ~ "high",
+    is.na(isced97) ~ "NA"),
+    edu = ifelse(edu == "NA", NA, edu)) %>% 
+  select(-qfedhi)
+
 
 saveRDS(bhps5, file = "bhps5.rds")
-
-
-
-
-
-
-#Sample selection
-  # filter(hhorig != 6, hhorig != 14, hhorig != 15, hhorig != 16, age_dv >= 18, age_dv <=45.99,
-         # numobs > 1
-         # ) %>% 
-  # select(pidp, wave, year, period, hhorig, istrtdatm, istrtdaty, sex, age_dv, gor_dv, hc, mnhhinc, ratio, ratiodummy, numobs)
-
-
-bhps5 %>% count(numobs)
-bhps5 %>% count(wave)
 
 
 
@@ -89,7 +90,8 @@ bhps5 %>% count(wave)
 ############################################################################
 
 ukhls5 <- indhhukhls %>% 
-  select(pidp, wave, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, fihhmnnet3_dv, gor_dv) %>% 
+  select(pidp, wave, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove,
+         fihhmnnet3_dv, gor_dv, qfhigh_dv, hiqual_dv, f_qfhighoth, marstat_dv, jbstat, plbornc, hgbiom, hgbiof, hgadoptm, hgadoptf) %>% 
   mutate(rent2 = ifelse(rent < 0, NA, rent),
          rent2 = ifelse(rent2 > houscost1_dv, NA, rent2),
          hc = ifelse(!is.na(rent2), rent2, houscost1_dv),
@@ -112,18 +114,49 @@ ukhls5 <- indhhukhls %>%
   mutate(numobs = length(wave)) %>% 
   ungroup() %>% 
   mutate(ratio = hc/hhinc,
-         ratiodummy = ifelse(ratio < 0 | ratio > 1, 1, 0)) #Not there are 2712 ratios larger than 1 and 755 less than 0 (2.2%)
+         ratiodummy = ifelse(ratio < 0 | ratio > 1, 1, 0)) %>%  #Not there are 2712 ratios larger than 1 and 755 less than 0 (2.2%)
+    group_by(pidp) %>% 
+    fill(qfhigh_dv, .direction = "downup") %>% 
+    ungroup() %>% 
+    mutate(edu_cat = case_when(
+      qfhigh_dv <= 6 ~ "high",
+      qfhigh_dv <= 12 & qfhigh_dv >=7 ~ "medium",
+      qfhigh_dv >=13 & qfhigh_dv <= 15 ~ "low")) %>% 
+    mutate(edu_cat = ifelse(is.na(edu_cat), "other", edu_cat)) %>% #other edu_qf for people at 16, 96 or missing
+    mutate(hiqual_edit = ifelse(hiqual_dv == 1 | hiqual_dv == 2, 5.1, ifelse(hiqual_dv == 3, 3.1, ifelse(hiqual_dv == 4, 2.1, ifelse(hiqual_dv == 5, 2.1, NA))))) %>% 
+    mutate(hiqual_edit = ifelse(hiqual_edit == 2.1, 2, ifelse(hiqual_edit == 3.1, 3, ifelse(hiqual_edit == 5.1, 5, NA)))) %>% 
+    # mutate(edu = ifelse(qfhigh_dv == 96 | qfhigh_dv <= 0, hiqual_edit, qfhigh_dv)) %>% 
+    mutate(isced97 = case_when(
+      qfhigh_dv == 1 ~ "6",
+      qfhigh_dv >= 2 & qfhigh_dv <= 4 | qfhigh_dv == 6 ~ "5",
+      # qfhigh_dv == 6 ~ "5",
+      qfhigh_dv == 5 ~ "4",
+      qfhigh_dv >=7 & qfhigh_dv <= 12 ~ "3",
+      qfhigh_dv >= 13 & qfhigh_dv <= 16 ~ "2",
+      qfhigh_dv == 96 ~"96",
+      qfhigh_dv == -8 ~"-8",
+      qfhigh_dv == -9 ~"-9")) %>% 
+    mutate(isced97 = ifelse(isced97 == 96 | isced97 <= 0, hiqual_edit, isced97)) %>% 
+    mutate(immedu = ifelse(f_qfhighoth >= 1 & f_qfhighoth <= 3, 6, ifelse(f_qfhighoth == 4, 5, ifelse(f_qfhighoth == 5 | f_qfhighoth == 6, 4, 
+                                                                                                      ifelse(f_qfhighoth == 7 | f_qfhighoth == 8, 3, 
+                                                                                                             ifelse(f_qfhighoth == 9, 2, ifelse(f_qfhighoth == 10, 1, NA))))))) %>%
+    mutate(isced97 = ifelse(is.na(isced97), immedu, isced97)) %>% 
+    mutate(isced97 = ifelse(is.na(isced97), NA, isced97)) %>% 
+    mutate(edu = case_when(
+                 isced97 == 2 ~ "low",
+                 isced97 == 3 | isced97 == 4  ~ "medium",
+                 isced97 == 5 | isced97 == 6  ~ "high",
+                 is.na(isced97) ~ "NA"),
+           edu = ifelse(edu == "NA", NA, edu),
+           edu = ifelse(is.na(edu), edu_cat, edu),
+           edu = ifelse(edu == "other", NA, edu)) %>% 
+  select(-qfhigh_dv, -hiqual_dv, -f_qfhighoth, -hiqual_edit, -immedu, -edu_cat)
+  
+ukhls5 %>% count(edu, edu_cat)
   
 saveRDS(ukhls5, file = "ukhls5.rds")
   
-  # #Sample selection
-  # filter(hhorig != 2, hhorig !=6, hhorig != 8, age_dv >= 18, age_dv <=45.99, 
-  #        # numobs > 1
-  #        ) %>% 
-  # select(pidp, wave, year, period, hhorig, istrtdatm, istrtdaty, sex, age_dv, gor_dv, hc, mnhhinc, ratio, ratiodummy, numobs)
-# 
-# 
-# ukhls5 %>% count(numobs)
+
 # # -------------------------------------------------------------------------
 # # Descriptive plots -------------------------------------------------------
 # # -------------------------------------------------------------------------
@@ -320,7 +353,8 @@ cball2 <- cball1 %>%
                                                 "0.1-15",
                                                 "30-45",
                                                 "45-60",
-                                                "60-100")))
+                                                "60-100")),
+         tenure = ifelse(tenure_dv == -9, NA, ifelse(tenure_dv <=2, "owned", ifelse(tenure_dv == 3 | tenure_dv == 4, "social", "rent"))))
 
 cball2 %>% count(ratio_cat3)
 
@@ -348,7 +382,7 @@ clockparitycheck <- cball2 %>% count(clock, event, parity)
 
 cball2 %>% count(clock, clock2)
 cball2 %>% count(is.na(ratio)) # 3.0% or 7633 of ratio are missing
-
+cball2 %>% count(tenure)
 
 # -------------------------------------------------------------------------
 # Descriptive plots -------------------------------------------------------
@@ -361,12 +395,35 @@ cball2 %>%
 
 cball2 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
+  mutate(ratio_cat = recode(ratio_cat,
+                             "0-10" = "10",
+                             "10-20" = "20",
+                             "20-30" = "30",
+                             "30-40" = "40",
+                             "40-50" = "50",
+                             "50-60" = "60",
+                             "60-70" = "70",
+                             "70-80" = "80",
+                             "80-90" = "90",
+                             "90-100" = "100")) %>% 
   group_by(period, ratio_cat) %>%
   summarise(count = n()) %>% 
   mutate(percent = count/sum(count)) %>% 
   ggplot(aes(x = ratio_cat, y = percent)) + 
-  geom_bar(stat = "identity") +
-  facet_wrap(~period)
+  geom_bar(stat = "identity", color = "black", fill = "#c58d01", size = 1) +
+  facet_wrap(~period) +
+  theme_bw()+
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 12), legend.title = element_text(size = 12), axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 12), axis.title.x = element_text(size = 12), strip.text.x = element_text(size = 12)) +
+  theme(aspect.ratio = 1) +
+  labs(fill = "Activity Status") +
+  # scale_fill_manual(labels = c("Full-time", "Part-time", "Employed - NA", "Self-employed", "Unemployed", "Out of LF"),
+  #                   values = c("full time", "part time", "paid - NA", "self-employed", "unemployed", "out of LF")) +
+  ggtitle("") +
+  xlab("Ratio of housing cost to net household income") +
+  ylab("Percent")
+  ggsave("ratio_distribution_period_s5_04-08-2022.png", dpi = 300)
 
 cball2 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 

@@ -20,6 +20,7 @@ library(survminer) #for ggsurvplot
 # 6. Clock errors (negative, too high, or NA) (done in third code block cball2)
 # 7. Event occurs in intermediate wave (Ind. 13) (more than 2 waves missing)
 # 8. Individuals (Ind. 14) who have large periods (more than 3 missing consecutive waves) 
+# 9. Parents in household
 ## Filter 1 is done in section 3 df = cball1
 ## Filter 2????
 ## Filter 3-5 is done after combining the surveys and adding fertility.
@@ -31,7 +32,7 @@ library(survminer) #for ggsurvplot
 ############################################################################
 
 bhps5 <- indhhbhps %>% 
-  select(pidp, wave, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hsroom, lkmove, hhyneti, 
+  select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hsroom, lkmove, hhyneti, 
          gor_dv, qfedhi, mlstat, spinhh, jbstat, plbornc, hgbiom, hgbiof) %>% 
   mutate(year = wave + 1990,
          hhyneti = ifelse(hhyneti < 0, NA, hhyneti),
@@ -78,9 +79,20 @@ bhps5 <- indhhbhps %>%
     isced97 == 5 | isced97 == 6  ~ "high",
     is.na(isced97) ~ "NA"),
     edu = ifelse(edu == "NA", NA, edu)) %>% 
-  select(-qfedhi)
+  mutate(mlstat = ifelse(mlstat < 0, NA, mlstat), #partnership controls
+         partner = ifelse(mlstat == 2 | mlstat == 3, "married", "single"),
+         partner = ifelse(spinhh == 1 & partner == "single", "cohab", partner),
+         emp = ifelse(jbstat < 0, NA, ifelse(jbstat == 1 | jbstat == 2, "emp", ifelse(jbstat == 3, "unemp", ifelse(jbstat == 7, "student", "inactive")))), #employment control
+         ukborn = ifelse(plbornc == -8, 1, ifelse(plbornc > 0, 0, NA)),
+         parenthh = ifelse(hgbiom > 0 | hgbiof > 0, 1, 0)) %>% 
+  group_by(pidp) %>% 
+  fill(partner, .direction = "downup") %>% 
+  fill(emp, .direction = "downup") %>% 
+  fill(ukborn, .direction = "downup") %>% 
+  ungroup() %>% 
+  select(-qfedhi, -mlstat, -spinhh, -jbstat, -plbornc, -hgbiom, -hgbiof)
 
-
+  
 saveRDS(bhps5, file = "bhps5.rds")
 
 
@@ -90,7 +102,7 @@ saveRDS(bhps5, file = "bhps5.rds")
 ############################################################################
 
 ukhls5 <- indhhukhls %>% 
-  select(pidp, wave, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove,
+  select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove,
          fihhmnnet3_dv, gor_dv, qfhigh_dv, hiqual_dv, f_qfhighoth, marstat_dv, jbstat, plbornc, hgbiom, hgbiof, hgadoptm, hgadoptf) %>% 
   mutate(rent2 = ifelse(rent < 0, NA, rent),
          rent2 = ifelse(rent2 > houscost1_dv, NA, rent2),
@@ -150,12 +162,21 @@ ukhls5 <- indhhukhls %>%
            edu = ifelse(edu == "NA", NA, edu),
            edu = ifelse(is.na(edu), edu_cat, edu),
            edu = ifelse(edu == "other", NA, edu)) %>% 
-  select(-qfhigh_dv, -hiqual_dv, -f_qfhighoth, -hiqual_edit, -immedu, -edu_cat)
-  
-ukhls5 %>% count(edu, edu_cat)
+  mutate(partner = ifelse(marstat_dv == 1, "married", ifelse(marstat_dv == 2, "cohab", ifelse(marstat_dv < 0, NA, "single"))), #partnership control
+         emp = ifelse(jbstat < 0, NA, ifelse(jbstat == 1 | jbstat == 2, "emp", ifelse(jbstat == 3, "unemp", ifelse(jbstat == 7, "student", "inactive")))), #employment control
+         ukborn = ifelse(plbornc == -8, 1, ifelse(plbornc > 0, 0, NA)), #ukborn control
+         parenthh = ifelse(hgbiom > 0 | hgadoptm > 0 | hgbiof > 0 | hgadoptf > 0, 1, 0),
+         hsroom = hsrooms + hsbeds, #This mirrors the BHPS variable "hsroom" which is not divided like the UKHLS
+         hsroom = ifelse(hsroom < 0, NA, hsroom)) %>% 
+  group_by(pidp) %>% 
+  fill(partner, .direction = "downup") %>% 
+  fill(emp, .direction = "downup") %>% 
+  fill(ukborn, .direction = "downup") %>% 
+  ungroup() %>% 
+  select(-qfhigh_dv, -hiqual_dv, -f_qfhighoth, -hiqual_edit, -immedu, -edu_cat, -marstat_dv, -jbstat, -plbornc, -hgbiom, -hgbiof, -hgadoptm, -hgadoptf, -hsrooms, -hsbeds)
   
 saveRDS(ukhls5, file = "ukhls5.rds")
-  
+
 
 # # -------------------------------------------------------------------------
 # # Descriptive plots -------------------------------------------------------
@@ -259,7 +280,7 @@ cball0 <- cball %>%
 
 saveRDS(cball0, file = "cball0.rds")
 
-
+check <- cball0 %>% count(parenthh, age_dv)
 
 # The last dataframe takes a considerable amount of time to process. This continues the data cleaning process with a break to reduce errors
 #~ This is completed by steps in the dfs cball1, cball2  ~#
@@ -356,7 +377,7 @@ cball2 <- cball1 %>%
                                                 "60-100")),
          tenure = ifelse(tenure_dv == -9, NA, ifelse(tenure_dv <=2, "owned", ifelse(tenure_dv == 3 | tenure_dv == 4, "social", "rent"))))
 
-cball2 %>% count(ratio_cat3)
+check <- cball2 %>% count(parenthh, age)
 
 saveRDS(cball2, file = "cball2.rds")
 
@@ -392,7 +413,7 @@ cball2 %>%
   ggplot(aes(x = ratio)) + 
   geom_histogram(bins = 10) 
 
-
+#Distribution of Ratio by Period
 cball2 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   mutate(ratio_cat = recode(ratio_cat,
@@ -417,19 +438,66 @@ cball2 %>%
         axis.text = element_text(size = 12), legend.title = element_text(size = 12), axis.title.y = element_text(size = 12),
         legend.text = element_text(size = 12), axis.title.x = element_text(size = 12), strip.text.x = element_text(size = 12)) +
   theme(aspect.ratio = 1) +
-  labs(fill = "Activity Status") +
+  # labs(fill = "Activity Status") +
   # scale_fill_manual(labels = c("Full-time", "Part-time", "Employed - NA", "Self-employed", "Unemployed", "Out of LF"),
   #                   values = c("full time", "part time", "paid - NA", "self-employed", "unemployed", "out of LF")) +
-  ggtitle("") +
-  xlab("Ratio of housing cost to net household income") +
+  ggtitle("Distribution of Ratio of Houseing Cost to Household Income by Parity") +
+  xlab("") +
   ylab("Percent")
-  ggsave("ratio_distribution_period_s5_04-08-2022.png", dpi = 300)
+  ggsave("ratio_distribution_period_s5_29-08-2022.png", dpi = 300)
 
+#Distribution of Ratio by Parity
 cball2 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 
+  mutate(ratio_cat = recode(ratio_cat,
+                            "0-10" = "0",
+                            "10-20" = "10",
+                            "20-30" = "20",
+                            "30-40" = "30",
+                            "40-50" = "40",
+                            "50-60" = "50",
+                            "60-70" = "60",
+                            "70-80" = "70",
+                            "80-90" = "80",
+                            "90-100" = "90")) %>% 
   group_by(parity, ratio_cat) %>%
   summarise(count = n()) %>% 
   mutate(percent = count/sum(count)) %>% 
   ggplot(aes(x = ratio_cat, y = percent)) + 
-  geom_bar(stat = "identity") +
-  facet_wrap(~parity)
+  geom_bar(stat = "identity", color = "black", fill = "#2176AE", size = 1) +
+  facet_wrap(~parity) +
+  theme_bw()+
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 12), legend.title = element_text(size = 12), axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 12), axis.title.x = element_text(size = 12), strip.text.x = element_text(size = 12)) +
+  theme(aspect.ratio = 1) +
+  # labs(fill = "Activity Status") +
+  # scale_fill_manual(labels = c("Full-time", "Part-time", "Employed - NA", "Self-employed", "Unemployed", "Out of LF"),
+  #                   values = c("full time", "part time", "paid - NA", "self-employed", "unemployed", "out of LF")) +
+  ggtitle("Ratio of housing cost to net household income") +
+  xlab("Ratio of housing cost to net household income") +
+  ylab("Percent")
+ggsave("ratio_distribution_parity_s5_29-08-2022.png", dpi = 300)
+
+
+#Age distribution with parents in household
+cball2 %>% 
+  filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 
+  mutate(parenthh = as.character(parenthh),
+         parenthh = recode(parenthh,
+                            "0" = "No",
+                            "1" = "Yes")) %>% 
+  ggplot(aes(x = age, fill = parenthh)) + 
+  geom_histogram(binwidth = 1, color = "black", size = 1) +
+  scale_fill_manual(values = c("#CCA43B", "#0f4c5c")) +
+  theme_bw()+
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 12), legend.title = element_text(size = 12), axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 12), axis.title.x = element_text(size = 12), strip.text.x = element_text(size = 12)) +
+  theme(aspect.ratio = 1) +
+  labs(fill = "Parent(s) in HH",
+       title = "Age Distribution of Sample: Parent(s) in Household") +
+  xlab("Age") +
+  ylab("Count")
+ggsave("distribution_age_parenthh_s5_29-08-2022.png", dpi = 300)  
+

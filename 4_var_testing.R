@@ -18,6 +18,7 @@ library(lubridate)
 # Clock:
 ## Calculate the time since 18 for parity 1
 ## Calculate the time since last birth for parity 2&3
+## Living with parents in household
 
 # Explanatory:
 # Income and housing costs are present but need to be analyzed and imputed
@@ -26,40 +27,26 @@ library(lubridate)
 # Parity is done
 
 # Controls:
-# Age is present for all individuals (age/agesq)
+## Age is present for all individuals (age/agesq)
+## Education
+## Number of Rooms
+## Housing Tenure
+## Partnership
+## Job status
 
 
 
 
 ### What's missing?
-# 1. Clock: I need to find the variable for living with parents (S3)
-## a. there are variables in the household grid I can use 
-### i. live with bio mom/dad: hgbiom, hgbiof (BHPS/UKHLS)
-### ii. live with bio/step mom/dad: mnspno/fnspno (UKHLS)
-### iii. live with adopted mom/dad: hgadoptm/hgadoptf
 
 # 2. I need to deal with the LAD and the 25% housing price per year (S5)
 
 # 4. I need to impute missing income/hc data (S5/6)
 
 # 5. I need to look at the controls (S3)
-## a. education needs to be harmonized to international scales (get it to the ISCED standard)
-### i.BHPS: qfedhi
-### ii. UKHLS: Take from previous work
-## b. Rooms
-### i. BSPS: hsroom
-### ii. UKHLS: hsrooms + hsbeds
-## c. DONE - does the types of housing match? (tenure_dv) (S4)
 ## d. time since moved dummies require work calculating the last move each wave (S3)
-## e. partnership (married, cohab, single) (S3)
-### i. BHPS: two variables are needed: mlstat (legal marriage status) and spinhh (to find cohabitating non-married partners)
-### ii. UKHLS (marstat_dv)
-## f. activity status: (jbstat): full-time student, employed, unemployed, inactive (S5) (no need to code twice)
 ## g. Social class (this is frustrating!)
 ## i. cohort: this is just derived from birth year but do I need it?
-## j. UK Born
-### i. UKHLS - "ukborn"
-### ii. xwavedat "plbornc" for place of birth (BHPS/UKHLS)
 
 # 6. Sample Weights
 

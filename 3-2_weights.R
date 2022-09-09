@@ -297,6 +297,8 @@ wght_ukhls <-
   relocate("wave", .after = "pidp") %>%
   # relocate("hhorig", .after = "wave") %>% 
   arrange(pidp, wave) 
+# 
+# test <- wght_ukhls2 %>% filter(wave == 1)
 
 
 saveRDS(wght_ukhls, file = "wght_ukhls.rds") 
@@ -315,4 +317,13 @@ wght_bhps2 <- wght_bhps %>%
 
 wght_ukhls2 <- wght_ukhls%>%
   select(pidp, wave, indinus_xw, indinbh_xw, indinub_xw)
+
+
+#I cannot yet decide how to use the weights because there appears to be several issues with which survey weights to select for each survey wave.
+#Open questions:
+# 1. Long vs x'sectional
+# 2. should I apply "full x'sectional" to the entire sample in that wave or just the specific x'sectional weights to the specific sample?
+
+
+
 

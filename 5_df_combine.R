@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 16.06.2022
-#Last Updated: 26.08.2022
+#Last Updated: 09.09.2022
 
 library(tidyverse)
 library(haven)
@@ -401,9 +401,26 @@ check <- cball2 %>%  #There is 2 obs with clock as NA still
 clockparitycheck <- cball2 %>% count(clock, event, parity)
 #As you would assume, the number of 2&3 children are more relative to 1 children at small numbers but that relationship changes as the number grows
 
-cball2 %>% count(clock, clock2)
-cball2 %>% count(is.na(ratio)) # 3.0% or 7633 of ratio are missing
-cball2 %>% count(tenure)
+
+# -------------------------------------------------------------------------
+# Adding LAD --------------------------------------------------------------
+# -------------------------------------------------------------------------
+
+
+cballlad <- cball2 %>% 
+  left_join(., lad_values, by = c("hidp", "wave")) %>% 
+  select(-year.y) %>% 
+  rename("year" = "year.x") %>% 
+  group_by(pidp) %>% 
+  fill(code, .direction = "up") %>% 
+  ungroup
+
+#There are 618 NA. It looks like missing LAD are due to moves. I will fill "up" to assume the wave happened during the move.
+cballlad %>% count(is.na(code))
+#After group the NA is reduced to 375
+
+
+
 
 # -------------------------------------------------------------------------
 # Descriptive plots -------------------------------------------------------

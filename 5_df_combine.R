@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 16.06.2022
-#Last Updated: 09.09.2022
+#Last Updated: 19.09.2022
 
 library(tidyverse)
 library(haven)
@@ -84,7 +84,9 @@ bhps5 <- indhhbhps %>%
          partner = ifelse(spinhh == 1 & partner == "single", "cohab", partner),
          emp = ifelse(jbstat < 0, NA, ifelse(jbstat == 1 | jbstat == 2, "emp", ifelse(jbstat == 3, "unemp", ifelse(jbstat == 7, "student", "inactive")))), #employment control
          ukborn = ifelse(plbornc == -8, 1, ifelse(plbornc > 0, 0, NA)),
-         parenthh = ifelse(hgbiom > 0 | hgbiof > 0, 1, 0)) %>% 
+         parenthh = ifelse(hgbiom > 0 | hgbiof > 0, 1, 0),
+         hsroom = ifelse(hsroom < 0, NA, hsroom),
+         lkmove = ifelse(lkmove < -1, NA, lkmove)) %>% 
   group_by(pidp) %>% 
   fill(partner, .direction = "downup") %>% 
   fill(emp, .direction = "downup") %>% 
@@ -94,7 +96,6 @@ bhps5 <- indhhbhps %>%
 
   
 saveRDS(bhps5, file = "bhps5.rds")
-
 
 
 ############################################################################
@@ -167,7 +168,8 @@ ukhls5 <- indhhukhls %>%
          ukborn = ifelse(plbornc == -8, 1, ifelse(plbornc > 0, 0, NA)), #ukborn control
          parenthh = ifelse(hgbiom > 0 | hgadoptm > 0 | hgbiof > 0 | hgadoptf > 0, 1, 0),
          hsroom = hsrooms + hsbeds, #This mirrors the BHPS variable "hsroom" which is not divided like the UKHLS
-         hsroom = ifelse(hsroom < 0, NA, hsroom)) %>% 
+         hsroom = ifelse(hsroom < 0, NA, hsroom),
+         lkmove = ifelse(lkmove < -1, NA, lkmove)) %>% 
   group_by(pidp) %>% 
   fill(partner, .direction = "downup") %>% 
   fill(emp, .direction = "downup") %>% 
@@ -177,6 +179,7 @@ ukhls5 <- indhhukhls %>%
   
 saveRDS(ukhls5, file = "ukhls5.rds")
 
+ukhls5 %>% count(lkmove)
 
 # # -------------------------------------------------------------------------
 # # Descriptive plots -------------------------------------------------------
@@ -204,7 +207,7 @@ allfert_cut <- allfert %>%
   filter(bno <= 3, !is.na(kdob)) #I lose about 6000 higher parity births (exclusively from UKHLS)
 
 # Combining BHPS and UKHLS and adding fertility  
-## I make the assumption that housing costs over 100% of household income will be recategorized as 1 and negative ratios will be recatoegirzed as 0.
+## I make the assumption that housing costs over 100% of household income will be recategorized as 1 and negative ratios will be recategorized as 0.
 ## The logic is fixed that a person who spends more on house then they earn clearly is at equal to maxed out. Negative ratios come generally from negative income.
 cball <- 
   bind_rows(bhps5, ukhls5) %>% 
@@ -280,7 +283,7 @@ cball0 <- cball %>%
 
 saveRDS(cball0, file = "cball0.rds")
 
-check <- cball0 %>% count(parenthh, age_dv)
+# check <- cball0 %>% count(parenthh, age_dv)
 
 # The last dataframe takes a considerable amount of time to process. This continues the data cleaning process with a break to reduce errors
 #~ This is completed by steps in the dfs cball1, cball2  ~#
@@ -377,7 +380,7 @@ cball2 <- cball1 %>%
                                                 "60-100")),
          tenure = ifelse(tenure_dv == -9, NA, ifelse(tenure_dv <=2, "owned", ifelse(tenure_dv == 3 | tenure_dv == 4, "social", "rent"))))
 
-check <- cball2 %>% count(parenthh, age)
+# check <- cball2 %>% count(parenthh, age)
 
 saveRDS(cball2, file = "cball2.rds")
 
@@ -412,14 +415,14 @@ cballlad <- cball2 %>%
   select(-year.y) %>% 
   rename("year" = "year.x") %>% 
   group_by(pidp) %>% 
-  fill(code, .direction = "up") %>% 
-  ungroup
+  fill(code, .direction = "updown") %>% 
+  ungroup()
 
 #There are 618 NA. It looks like missing LAD are due to moves. I will fill "up" to assume the wave happened during the move.
 cballlad %>% count(is.na(code))
-#After group the NA is reduced to 375
+#After group the NA is reduced to 326
 
-
+saveRDS(cballlad, file = "cballlad.rds")
 
 
 # -------------------------------------------------------------------------

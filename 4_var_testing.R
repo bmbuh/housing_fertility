@@ -8,8 +8,6 @@ library(lubridate)
 
 #Notes for the testing process are saved in the docx file "variable_testing_creation_imputation"
 
-
-
 ### What's been done?
 # Outcome: 
 ## Birth events exists in the correct waves as "kdob"
@@ -21,7 +19,7 @@ library(lubridate)
 ## Living with parents in household
 
 # Explanatory:
-# Income and housing costs are present but need to be analyzed and imputed
+# Income and housing costs are present have been analyzed and imputed
 # The ratio of hc/inc called "ratio"
 # Period is done
 # Parity is done
@@ -40,8 +38,6 @@ library(lubridate)
 ### What's missing?
 
 # 2. I need to deal with the LAD and the 25% housing price per year (S5)
-
-# 4. I need to impute missing income/hc data (S5/6)
 
 # 5. I need to look at the controls (S3)
 ## d. time since moved dummies require work calculating the last move each wave (S3)

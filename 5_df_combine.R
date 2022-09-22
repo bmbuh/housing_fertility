@@ -13,7 +13,7 @@ library(survminer) #for ggsurvplot
 
 # Sample selection:
 # 1. Remove BHPS Wave 1 (done in third code block cball1)
-# 2. England, Wales, Scotland (no N.I. or Ethnic boost)
+# 2. England, Wales, Scotland, N.I. and Ethnic boost)
 # 3. individual ages 18-45 (done in third code block "cball")
 # 4. observations = 2+ (done in third code block "cball")
 # 5. Parity 0-3 (done in third code block "cball0")

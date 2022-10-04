@@ -1,6 +1,11 @@
 #Coded by: Brian Buh
 #Started on: 19.09.2022
-#Last Updated: 21.09.2022
+#Last Updated: 03.10.2022
+
+#UPDATE: After talking with Eva I decided the following:
+# 1. I will only focus on women
+# 2. I will NOT include observations where the women are single
+
 
 #This script includes the descriptive and regression analysis
 
@@ -43,6 +48,21 @@ hhpart2 <- hhpart %>%
 hhpart3 <- hhpart2 %>% 
   filter(partner != "single")
 
+# DF for lagged variables
+###NOTE: THIS SHOULD PROBABLY BE PROPERLY ADDED TO THE NON-CUT SET
+hhpart4 <-  hhpart3 %>% 
+  group_by(pidp) %>% 
+  mutate(tp1 = lead(event),
+         ratio_cat2_tm1 = lag(ratio_cat2),
+         ratio_cat2_tm2 = lag(ratio_cat2_tm1),
+         tenure_tm1 = lag(tenure)) %>% 
+  # select(pidp, event, tp1, ratio_cat2, ratio_cat2_tm1, ratio_cat2_tm2) %>% #for examining is data quality
+  ungroup()
+
+#ratio_cat2_tm1  
+hhpart4 %>% count(is.na(ratio_cat2_tm1)) #NA = 13188 [18.0%]
+hhpart4 %>% count(is.na(ratio_cat2_tm2)) #NA = 24568 [33.6%]
+
 
 ###########################################################################
 # Descriptive Analysis ----------------------------------------------------
@@ -59,14 +79,20 @@ lad <- hhpart2 %>% distinct(code)
 
 #separated by parity
 mycontrols <- tableby.control(test = FALSE)
-hhpart2stats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + emp, data = hhpart2, control = mycontrols)
-labels(hhpart2stats) <-  c(parity = "Parity", event = "Event", clock = "Exposure", age = "Age",
+hhpart3stats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + emp, data = hhpart3, control = mycontrols)
+labels(hhpart3stats) <-  c(parity = "Parity", event = "Event", clock = "Exposure", age = "Age",
                          ratio = "Ratio of Housing to Income", ratio_cat2 = "Ratio of Housing to Income (Cat.)", period = "Period",
                          tenure = "Housing type", partner = "Partnership status", edu = "Educational attainment", ukborn = "UK Born",
                          emp = "Activity status")
-summary(hhpart2stats)
-write2html(hhpart2stats, "hhpart2stats_parity_21-09-2022.html") #UPDATE DATE
-write2word(hhpart2stats, "hhpart2stats_parity_21-09-2022.docx") #UPDATE DATE
+summary(hhpart3stats)
+write2html(hhpart3stats, "hhpart3stats_parity_03-10-2022.html") #UPDATE DATE
+write2word(hhpart3stats, "hhpart3stats_parity_03-10-2022.docx") #UPDATE DATE
+
+
+
+#This is for hhpart2 - including single women
+# write2html(hhpart2stats, "hhpart2stats_parity_21-09-2022.html") #UPDATE DATE
+# write2word(hhpart2stats, "hhpart2stats_parity_21-09-2022.docx") #UPDATE DATE
 
 #separated by period
 hhpart2stats2 <-arsenal::tableby(period ~ event + clock + ratio + ratio_cat2 + parity + tenure + age + partner + edu + ukborn + emp, data = hhpart2, control = mycontrols)
@@ -177,6 +203,38 @@ hhpart %>%
 ggsave("distribution_age_parenthh_s8_19-09-2022.png", dpi = 300)  
 
 
+#Age distribution hhpart2
+hhpart2 %>% 
+  ggplot(aes(x = age)) + 
+  geom_histogram(binwidth = 1, color = "black", fill = "#0f4c5c", size = 1) +
+  # scale_fill_manual(values = c("#CCA43B", "#0f4c5c")) +
+  theme_bw()+
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 12), legend.title = element_text(size = 12), axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 12), axis.title.x = element_text(size = 12), strip.text.x = element_text(size = 12)) +
+  theme(aspect.ratio = 1) +
+  labs(fill = "Parent(s) in HH",
+       title = "Age Distribution of Sample: All Women") +
+  xlab("Age") +
+  ylab("Count")
+ggsave("distribution_hhpart2_s8_03-10-2022.png", dpi = 300)  
+
+
+#Age distribution hhpart3
+hhpart3 %>% 
+  ggplot(aes(x = age)) + 
+  geom_histogram(binwidth = 1, color = "black", fill = "#0f4c5c", size = 1) +
+  # scale_fill_manual(values = c("#CCA43B", "#0f4c5c")) +
+  theme_bw()+
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 12), legend.title = element_text(size = 12), axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 12), axis.title.x = element_text(size = 12), strip.text.x = element_text(size = 12)) +
+  theme(aspect.ratio = 1) +
+  labs(fill = "Parent(s) in HH",
+       title = "Age Distribution of Sample: Partnered Women") +
+  xlab("Age") +
+  ylab("Count")
+ggsave("distribution_hhpart3_s8_03-10-2022.png", dpi = 300)   
 
 
 ###########################################################################
@@ -206,11 +264,16 @@ ggsave("distribution_age_parenthh_s8_19-09-2022.png", dpi = 300)
 # M16: uses ratio_cat2*parity and clock*parity*period + tenure (hhpart3) [removes single observations]
 # M17: uses ratio_cat*parity + clock*parity + tenure (hhpart3)
 
+# M18: M15 - lagged housing cost (ratio_cat2_tm1)
+# M19: M15 - lagged housing cost + lagged tenure (ratio_cat2_tm1, tenure_tm1)
+# M20: M15 - lagged housing cost 2 waves (ratio_cat2_tm2)
+
+
 
 # Note: It appears that the proper model of analysis in M15. Clearly single individuals are biasing the sample.
 # Additionally, not including all three interactions appears to give a very different influence (check for period).
-# However, the threeway interaction makes the relationships go crazy and the confidence intervals.
-# This may be due to the fact that the ratio already removes much of the period effect from the model by standardizing the effect
+# However, the three way interaction makes the relationships go crazy and the confidence intervals very large.
+# This may be due to the fact that the ratio already removes much of the period effect from the model by standardizing the effect.
 
 
 # -------------------------------------------------------------------------
@@ -924,6 +987,194 @@ effect_plot(m17,
 # ggsave("m17_S8_19-09-2022.png", dpi = 300)
 
 
+
+# M18: M15 - lagged housing cost (ratio_cat2_tm1)
+# Analysis M18 --------------------------------------------------------------
+# Use a co-residing only sample looking at the period interaction
+m18 <- glmer(formula = event ~ clock*parity + ratio_cat2_tm1*parity + ratio_cat2_tm1*period + tenure + age + agesq + (1|pidp) + (1|code),
+             data = hhpart4,
+             family = binomial,
+             control = glmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun = 2e5))) 
+
+summary(m18)
+summ(m18, exp = TRUE)
+
+#save
+saveRDS(m18,"m18.rds")
+# readRDS("m18.rds")
+# m18 <- readRDS("S:/r_projects/housing_fertility/model_objects/m18.rds")
+
+
+#Parity Predicted Probability Plots
+effect_plot(m18, 
+            pred = ratio_cat2, 
+            pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "m18:Clock*parity + Ratio*Parity + Period + Tenure + Age; no parents, no singles",
+            y.label = "Experencing a Live Birth")
+
+cat_plot(m18, pred = parity, modx = ratio_cat2_tm1,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
+         pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "m18:Clock*parity + Ratio_tm1*Parity + Ratio_tm1*Period + Tenure + Age; no parents, no singles",
+         legend.main = "Household income used for housing",
+         colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("m18_3way_parity_period_hclagged_S8_04-10-2022.png", dpi = 300)
+
+
+
+# M19: M15 - lagged housing cost + lagged tenure (ratio_cat2_tm1, tenure_tm1)
+# Analysis M19 --------------------------------------------------------------
+# Use a co-residing only sample looking at the period interaction
+m19 <- glmer(formula = event ~ clock*parity + ratio_cat2_tm1*parity + ratio_cat2_tm1*period + tenure_tm1 + age + agesq + (1|pidp) + (1|code),
+             data = hhpart4,
+             family = binomial,
+             control = glmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun = 2e5))) 
+
+summary(m19)
+summ(m19, exp = TRUE)
+
+#save
+saveRDS(m19,"m19.rds")
+# readRDS("m19.rds")
+# m19 <- readRDS("S:/r_projects/housing_fertility/model_objects/m19.rds")
+
+
+#Parity Predicted Probability Plots
+effect_plot(m19, 
+            pred = ratio_cat2, 
+            pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "m19:Clock*parity + Ratio*Parity + Period + Tenure + Age; no parents, no singles",
+            y.label = "Experencing a Live Birth")
+
+cat_plot(m19, pred = parity, modx = ratio_cat2_tm1,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
+         pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "m19:Clock*parity + Ratio_tm1*Parity + Ratio_tm1*Period + Tenure + Age; no parents, no singles",
+         legend.main = "Household income used for housing",
+         colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("m19_3way_parity_period_hclagged_tenurelagged_S8_04-10-2022.png", dpi = 300)
+
+#NOTE: IT DOES NOT CHANGE THE PREDICTED PROBABILITES OF THE PREVIOUS MODEL, SOME REDUCE SIGNIFICANCE (MARGINAL)
+
+
+
+# M20: M15 - lagged housing cost 2 waves (ratio_cat2_tm2)
+# Analysis M20 --------------------------------------------------------------
+# Use a co-residing only sample looking at the period interaction
+m20 <- glmer(formula = event ~ clock*parity + ratio_cat2_tm2*parity + ratio_cat2_tm2*period + tenure_tm1 + age + agesq + (1|pidp) + (1|code),
+             data = hhpart4,
+             family = binomial,
+             control = glmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun = 2e5))) 
+
+summary(m20)
+summ(m20, exp = TRUE)
+
+#save
+saveRDS(m20,"m20.rds")
+# readRDS("m20.rds")
+# m20 <- readRDS("S:/r_projects/housing_fertility/model_objects/m20.rds")
+
+
+#Parity Predicted Probability Plots
+effect_plot(m20, 
+            pred = ratio_cat2, 
+            pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "m20:Clock*parity + Ratio*Parity + Period + Tenure + Age; no parents, no singles",
+            y.label = "Experencing a Live Birth")
+
+cat_plot(m20, pred = parity, modx = ratio_cat2_tm1,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
+         pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "m20:Clock*parity + Ratio_tm1*Parity + Ratio_tm1*Period + Tenure + Age; no parents, no singles",
+         legend.main = "Household income used for housing",
+         colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("m20_3way_parity_period_hclagged_S8_04-10-2022.png", dpi = 300)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # -------------------------------------------------------------------------
 # Output ------------------------------------------------------------------
 # -------------------------------------------------------------------------
@@ -953,248 +1204,3 @@ modelsummary(a1, coef_map = cm3, output = "test.html", stars = TRUE)
 a1output <- modelsummary(a1, coef_map = cm3, output = "huxtable", stars = TRUE)
 quick_docx(a1diff_women, file = "A1diff_Women_AME_S10_20-07-2022.docx", open = FALSE)
 quick_xlsx(a1, file = "test.xlsx", open = FALSE)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # frailtylad2 --------------------------------------------------------------
-# #Three-level model with observations living with parents removed
-# ## use df cballlad2
-# 
-# frailtylad2 <- glmer(formula = event ~ clock + sex + ratio_cat2 + parity + period + age + agesq + (1|pidp) + (1|code),
-#                      data = cballlad2,
-#                      family = binomial,
-#                      control = glmerControl(optimizer = "bobyqa",
-#                                             optCtrl = list(maxfun = 2e5))) 
-# 
-# summary(frailtylad2)
-# summ(frailtylad2, exp = TRUE)
-# 
-# #save
-# saveRDS(frailtylad,"frailtylad2.rds")
-# readRDS("frailtylad2.rds")
-# frailtylad2 <- readRDS("S:/r_projects/housing_fertility/model_objects/frailtylad2.rds")
-# 
-# # frailtylad3 --------------------------------------------------------------
-# #Three-level model with observations living with parents removed with interactions
-# frailtylad3 <- glmer(formula = event ~ clock + sex + ratio_cat2*parity + period + age + agesq + (1|pidp) + (1|code),
-#                      data = cballlad2,
-#                      family = binomial,
-#                      control = glmerControl(optimizer = "bobyqa",
-#                                             optCtrl = list(maxfun = 2e5))) 
-# 
-# summary(frailtylad3)
-# summ(frailtylad3, exp = TRUE)
-# save.model(frailtylad3,"frailtylad3")
-# 
-# #save
-# saveRDS(frailtylad,"frailtylad3.rds")
-# readRDS("frailtylad3.rds")
-# frailtylad3 <- readRDS("S:/r_projects/housing_fertility/model_objects/frailtylad3.rds")
-# 
-# 
-# #Parity Predicted Probability Plots
-# effect_plot(frailtylad3, 
-#             pred = ratio_cat2, 
-#             pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
-#             interval = TRUE, 
-#             cat.geom = "line",
-#             y.label = "Experencing a Live Birth")
-# 
-# cat_plot(frailtylad3, pred = parity, modx = ratio_cat2,
-#          point.size = 2,
-#          line.thickness = 0.8,
-#          geom.alpha = 1,
-#          dodge.width = 0.4,
-#          errorbar.width = 0.25,
-#          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
-#          modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
-#          # modx.values = c("0", "0.1-15", "15-30", "30-45", "45-60", "60-100"), #For ratio_cat3
-#          # pred.values = c("out of LF", "unemployment", "self-employed", "part time", "full time"),
-#          pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
-#          # modx.labels = c("Low", "Medium", "High"),
-#          x.label = "",
-#          y.label = "Pr(Experencing a Live Birth)",
-#          legend.main = "Household income used for housing",
-#          colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
-#   theme_bw() +
-#   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
-#         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
-#         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-# ggsave("frailtylad3_S6_09-09-2022.png", dpi = 300)
-# 
-# 
-# # frailtylad4 --------------------------------------------------------------
-# #Three-level model with observations living with parents removed with interactions
-# frailtylad4 <- glmer(formula = event ~ clock + sex + ratio_cat2*period + ratio_cat2*parity + age + agesq + tenure + (1|pidp) + (1|code),
-#                      data = cballlad2,
-#                      family = binomial,
-#                      control = glmerControl(optimizer = "bobyqa",
-#                                             optCtrl = list(maxfun = 2e5))) 
-# 
-# summary(frailtylad4)
-# summ(frailtylad4, exp = TRUE)
-# 
-# #save
-# saveRDS(frailtylad,"frailtylad4.rds")
-# readRDS("frailtylad4.rds")
-# frailtylad4 <- readRDS("S:/r_projects/housing_fertility/model_objects/frailtylad4.rds")
-# 
-# #Period Predicted Probability Plots
-# effect_plot(frailtylad4, 
-#             pred = ratio_cat2, 
-#             pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
-#             interval = TRUE, 
-#             cat.geom = "line",
-#             y.label = "Experencing a Live Birth")
-# 
-# cat_plot(frailtylad4, pred = period, modx = ratio_cat2,
-#          point.size = 2,
-#          line.thickness = 0.8,
-#          geom.alpha = 1,
-#          dodge.width = 0.4,
-#          errorbar.width = 0.25,
-#          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
-#          modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
-#          # modx.values = c("0", "0.1-15", "15-30", "30-45", "45-60", "60-100"), #For ratio_cat3
-#          # pred.values = c("out of LF", "unemployment", "self-employed", "part time", "full time"),
-#          pred.labels = c("1992-1999", "2000-2007", "2008-2012", "2013-2021"),
-#          # modx.labels = c("Low", "Medium", "High"),
-#          x.label = "",
-#          y.label = "Pr(Experencing a Live Birth)",
-#          legend.main = "Household income used for housing",
-#          colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
-#   theme_bw() +
-#   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
-#         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
-#         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-# ggsave("frailtylad4_S6_09-09-2022.png", dpi = 300)
-# 
-# 
-# # frailtylad5 --------------------------------------------------------------
-# #Three-level model with observations living with parents removed with interactions plus controls
-# frailtylad5 <- glmer(formula = event ~ clock + sex + ratio_cat2*period + ratio_cat2*parity + age + agesq + tenure + 
-#                        edu + partner + ukborn + emp
-#                      + (1|pidp) + (1|code),
-#                      data = cballlad2,
-#                      family = binomial,
-#                      control = glmerControl(optimizer = "bobyqa",
-#                                             optCtrl = list(maxfun = 2e5))) 
-# 
-# summary(frailtylad5)
-# summ(frailtylad5, exp = TRUE)
-# 
-# #save
-# saveRDS(frailtylad5,"frailtylad5.rds")
-# readRDS("frailtylad5.rds")
-# frailtylad5 <- readRDS("S:/r_projects/housing_fertility/model_objects/frailtylad5.rds")
-# 
-# #Period Predicted Probability Plots
-# effect_plot(frailtylad5, 
-#             pred = ratio_cat2, 
-#             pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
-#             interval = TRUE, 
-#             cat.geom = "line",
-#             y.label = "Experencing a Live Birth")
-# 
-# cat_plot(frailtylad5, pred = period, modx = ratio_cat2,
-#          point.size = 2,
-#          line.thickness = 0.8,
-#          geom.alpha = 1,
-#          dodge.width = 0.4,
-#          errorbar.width = 0.25,
-#          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
-#          modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
-#          # modx.values = c("0", "0.1-15", "15-30", "30-45", "45-60", "60-100"), #For ratio_cat3
-#          # pred.values = c("out of LF", "unemployment", "self-employed", "part time", "full time"),
-#          pred.labels = c("1992-1999", "2000-2007", "2008-2012", "2013-2021"),
-#          # modx.labels = c("Low", "Medium", "High"),
-#          x.label = "",
-#          y.label = "Pr(Experencing a Live Birth)",
-#          legend.main = "Household income used for housing",
-#          colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
-#   theme_bw() +
-#   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
-#         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
-#         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-# ggsave("frailtylad5_S6_10-09-2022.png", dpi = 300)
-# 
-# 
-# cat_plot(frailtylad5, pred = parity, modx = ratio_cat2,
-#          point.size = 2,
-#          line.thickness = 0.8,
-#          geom.alpha = 1,
-#          dodge.width = 0.4,
-#          errorbar.width = 0.25,
-#          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
-#          modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
-#          # modx.values = c("0", "0.1-15", "15-30", "30-45", "45-60", "60-100"), #For ratio_cat3
-#          # pred.values = c("out of LF", "unemployment", "self-employed", "part time", "full time"),
-#          pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
-#          # modx.labels = c("Low", "Medium", "High"),
-#          x.label = "",
-#          y.label = "Pr(Experencing a Live Birth)",
-#          legend.main = "Household income used for housing",
-#          colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
-#   theme_bw() +
-#   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
-#         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
-#         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-# ggsave("frailtylad5_parity_S6_10-09-2022.png", dpi = 300)
-# 
-# 
-# 
-# 
-# # frailtylad6 -------------------------------------------------------------
-# #Three-level model with observations living with parents removed with interactions ratio as continuous variable
-# 
-# frailtylogit6 <- glmer(formula = event ~ clock + sex + ratio*parity + ratio*period + age + agesq + tenure + (1|pidp) + (1|code),
-#                        data = cballlad2,
-#                        family = binomial,
-#                        control = glmerControl(optimizer = "bobyqa", #This controls for the warning "Model is nearly unidentifiable"
-#                                               optCtrl = list(maxfun = 2e5))) 
-# 
-# summary(frailtylogit6)
-# print(frailtylogit6)
-# 
-# saveRDS(frailtylogit6,"frailtylogit6.rds")
-# 
-# 
-# effect_plot(frailtylad6, 
-#             pred = ratio, 
-#             pred.values = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1),
-#             interval = TRUE, 
-#             y.label = "Experencing a Live Birth")

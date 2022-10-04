@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 16.06.2022
-#Last Updated: 19.09.2022
+#Last Updated: 04.10.2022
 
 library(tidyverse)
 library(haven)
@@ -13,6 +13,7 @@ library(survminer) #for ggsurvplot
 
 # Sample selection:
 # 1. Remove BHPS Wave 1 (done in third code block cball1)
+## indhhbhps %>% filter(wave == 1, sex == 2) %>% count(is.na(xphsg)) [5,341 NA, 52.1%]
 # 2. England, Wales, Scotland, N.I. and Ethnic boost)
 # 3. individual ages 18-45 (done in third code block "cball")
 # 4. observations = 2+ (done in third code block "cball")
@@ -96,7 +97,6 @@ bhps5 <- indhhbhps %>%
 
   
 saveRDS(bhps5, file = "bhps5.rds")
-
 
 ############################################################################
 # UKHLS -------------------------------------------------------------------

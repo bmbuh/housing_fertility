@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 13.06.2022
-#Last Updated: 26.08.2022
+#Last Updated: 06.10.2022
 
 library(tidyverse)
 library(haven)
@@ -192,7 +192,7 @@ indvar <- c("hid", "hidp", "hhorig", "sex", "birthm", "birthy", "age_dv", "istrt
            "xpchcf", "xpchc", "f135", #These are childcare cost variables
            "f139", "lkmove", #housing benefit
            "plbornc", "gor_dv", "mlstat", "spinhh", "jbstat", "qfedhi", #controls
-           "hgbiom", "hgbiof") #live with parents
+           "hgbiom", "hgbiof", "hhsize", "plnowm", "plnowy4") #live with parents
 
 #Some variables are not included in wave 1: "birthm", "birthy", "istrtdaty"
 indvar1 <- c("hid", "hidp", "hhorig", "sex", "age_dv", "istrtdatm", #basic individual variables
@@ -200,7 +200,7 @@ indvar1 <- c("hid", "hidp", "hhorig", "sex", "age_dv", "istrtdatm", #basic indiv
             "xpchcf", "xpchc", "f135", #These are childcare cost variables
             "f139", "lkmove", #housing benefit
             "plbornc", "gor_dv", "mlstat", "spinhh", "jbstat", "qfedhi", #controls
-            "hgbiom", "hgbiof") #live with parents
+            "hgbiom", "hgbiof", "hhsize", "plnowm", "plnowy4") #live with parents
 
 
 w1indvar <- paste0('ba_', indvar1)
@@ -247,7 +247,7 @@ ba_ind <- ba_indresp %>%
   mutate(birthm = NA) %>% 
   mutate(birthy = NA) %>% 
   mutate(istrtdaty = NA) %>% 
-  mutate(age_dv = NA) 
+  mutate(age_dv = NA)
 
 bb_ind <- bb_indresp %>% 
   dplyr::select("pidp", "pid",  w2indvar) %>% 
@@ -481,7 +481,7 @@ saveRDS(indhhbhps, file = "indhhbhps.rds")
 #Sorting out needed variables from indresp
 #Changes in these lists allow for much quick adding and subtracting variables
 wave_varhh <- c("hidp", "fihhmnnet3_dv", "fihhmnnet4_dv", "houscost1_dv", "houscost2_dv", "xpmg", "rent", "rentg", "rentgrs_dv", 
-                "hsownd", "tenure_dv", "hsrooms", "hsbeds")
+                "hsownd", "tenure_dv", "hsrooms", "hsbeds", "hhsize")
 
 #Add the wave prefix to the variable list
 w1_varhh <- paste0('a_', wave_varhh)
@@ -588,10 +588,16 @@ saveRDS(hh_ukhls, file = "hh_ukhls.rds")
 #Changes in these lists allow for much quick adding and subtracting variables
 wave_var <- c("hhorig", "hidp", "sex", "birthm", "birthy", "istrtdatm", "istrtdaty", "age_dv", "qfhigh_dv", "hiqual_dv",
               "gor_dv", "marstat_dv", "jbstat", "plbornc", "jbisco88_cc", "pbnft8", "lkmove",
-              "hgbiom", "hgbiof", "hgadoptm", "hgadoptf") #live with parents
+              "hgbiom", "hgbiof", "hgadoptm", "hgadoptf", #live with parents
+              "plnowm", "plnowy4", "fimnnet_dv")
+
+wave1_var <- c("hhorig", "hidp", "sex", "birthm", "birthy", "istrtdatm", "istrtdaty", "age_dv", "qfhigh_dv", "hiqual_dv",
+              "gor_dv", "marstat_dv", "jbstat", "plbornc", "jbisco88_cc", "pbnft8", "lkmove",
+              "hgbiom", "hgbiof", "hgadoptm", "hgadoptf", #live with parents
+              "mvmnth", "mvyr", "fimnnet_dv")
 
 #Add the wave prefix to the variable list
-w1_var <- paste0('a_', wave_var)
+w1_var <- paste0('a_', wave1_var)
 
 w2_var <- paste0('b_', wave_var)
 
@@ -617,8 +623,10 @@ w11_var <- paste0('k_', wave_var)
 #Preparing the variables for merging
 a_ind <- a_indresp %>% 
   dplyr::select("pidp", w1_var) %>% 
-  rename_with(~ wave_var[which(w1_var == .x)], .cols = w1_var) %>% 
-  mutate(wave = 1)
+  rename_with(~ wave1_var[which(w1_var == .x)], .cols = w1_var) %>% 
+  mutate(wave = 1) %>% 
+  rename("plnowm" = "mvmnth") %>% 
+  rename("plnowy4" = "mvyr")
 
 b_ind <- b_indresp %>% 
   dplyr::select("pidp", w2_var)%>% 

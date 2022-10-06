@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 03.08.2022
-#Last Updated: 09.09.2022
+#Last Updated: 06.10.2022
 
 library(tidyverse)
 library(haven)
@@ -313,10 +313,10 @@ summ(frailtylogit, exp = TRUE)
 #This run tests to see if reducing the integration points lowers the computational time
 ## Conclusion: This does nothing to lower computational time and does not give different results
 frailtylogit2 <- glmer(formula = event ~ clock + sex + ratio_cat2 + parity + period + age + agesq + (1|pidp),
-                      data = cball2,
-                      family = binomial,
-                      control = glmerControl(optimizer = "bobyqa",
-                                             nAGQ = 10)) #This is to tell the model to use 10 integration points to reduce the model computation demands of the model
+                       data = cball2,
+                       family = binomial,
+                       control = glmerControl(optimizer = "bobyqa",
+                                              nAGQ = 10)) #This is to tell the model to use 10 integration points to reduce the model computation demands of the model
 
 summary(frailtylogit2)
 print(frailtylogit2)
@@ -358,10 +358,10 @@ frailtylad <- readRDS("S:/r_projects/housing_fertility/model_objects/frailtylad.
 ## use df cballlad2
 
 frailtylad2 <- glmer(formula = event ~ clock + sex + ratio_cat2 + parity + period + age + agesq + (1|pidp) + (1|code),
-                    data = cballlad2,
-                    family = binomial,
-                    control = glmerControl(optimizer = "bobyqa",
-                                           optCtrl = list(maxfun = 2e5))) 
+                     data = cballlad2,
+                     family = binomial,
+                     control = glmerControl(optimizer = "bobyqa",
+                                            optCtrl = list(maxfun = 2e5))) 
 
 summary(frailtylad2)
 summ(frailtylad2, exp = TRUE)
@@ -471,7 +471,7 @@ ggsave("frailtylad4_S6_09-09-2022.png", dpi = 300)
 #Three-level model with observations living with parents removed with interactions plus controls
 frailtylad5 <- glmer(formula = event ~ clock + sex + ratio_cat2*period + ratio_cat2*parity + age + agesq + tenure + 
                        edu + partner + ukborn + emp
-                       + (1|pidp) + (1|code),
+                     + (1|pidp) + (1|code),
                      data = cballlad2,
                      family = binomial,
                      control = glmerControl(optimizer = "bobyqa",
@@ -589,10 +589,10 @@ cball3 <- cball2 %>% filter(!is.na(ratio))
 str(cball3)
 
 frailtylogit6 <- glmer(formula = event ~ clock + sex + ratio*parity + ratio*period + age + agesq + tenure + (1|pidp) + (1|code),
-                      data = cballlad2,
-                      family = binomial,
-                      control = glmerControl(optimizer = "bobyqa", #This controls for the warning "Model is nearly unidentifiable"
-                                             optCtrl = list(maxfun = 2e5))) 
+                       data = cballlad2,
+                       family = binomial,
+                       control = glmerControl(optimizer = "bobyqa", #This controls for the warning "Model is nearly unidentifiable"
+                                              optCtrl = list(maxfun = 2e5))) 
 
 summary(frailtylogit6)
 print(frailtylogit6)
@@ -607,7 +607,7 @@ jvalues <- with(cball2, seq(from = 0, to = 1, length.out = 100))
 pp <- lapply(jvalues, function(j) {
   tmpdat$ratio <- j
   predict(frailtylogit3, newdata = tmpdat, type = "response")
-  })
+})
 
 # average marginal predicted probability across a few different ratios
 sapply(pp[c(1, 20, 40, 60, 80, 100)], mean)
@@ -615,7 +615,7 @@ sapply(pp[c(1, 20, 40, 60, 80, 100)], mean)
 # get the means with lower and upper quartiles
 plotdat <- t(sapply(pp, function(x) {
   c(M = mean(x), quantile(x, c(0.25, 0.75)))
-  }))
+}))
 
 # add in ratio values and convert to data frame
 plotdat <- as.data.frame(cbind(plotdat, jvalues))
@@ -636,8 +636,8 @@ biprobs <- lapply(levels(cball2$parity), function(stage) {
   lapply(jvalues, function(j) {
     tmpdat$ratio <- j
     predict(m, newdata = tmpdat, type = "response")
-     })
-   })
+  })
+})
 
 # get means and quartiles for all jvalues for each level of parity
 plotdat2 <- lapply(biprobs, function(X) {
@@ -793,7 +793,7 @@ cat_plot(a1m3, pred = tenure, modx = ratio_cat2, mod2 = period,
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
          legend.main = "Household income used for housing") +
-         # colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  # colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
@@ -805,8 +805,8 @@ cat_plot(a1m3, pred = tenure, modx = ratio_cat2, mod2 = period,
 
 #Men
 a1m1m <- glm(formula = event ~ clock + ratio_cat2*parity + period + age + agesq,
-            family = binomial(link = "logit"),
-            data = cball2m)
+             family = binomial(link = "logit"),
+             data = cball2m)
 summary(margins(a1m1m))
 
 cat_plot(a1m1m, pred = parity, modx = ratio_cat2,
@@ -863,8 +863,8 @@ cat_plot(a1m1f, pred = parity, modx = ratio_cat2, mod2 = period,
 
 #Parity 1
 a1m1p1 <- glm(formula = event ~ clock + sex*ratio_cat2 + period + age + agesq,
-             family = binomial(link = "logit"),
-             data = cball2p1)
+              family = binomial(link = "logit"),
+              data = cball2p1)
 summary(margins(a1m1m))
 
 cat_plot(a1m1p1, pred = ratio_cat2, modx = sex,

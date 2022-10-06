@@ -32,6 +32,8 @@ library(lubridate)
 ## Partnership
 ## Job status
 
+# Weights
+
 
 
 
@@ -42,10 +44,6 @@ library(lubridate)
 # 5. I need to look at the controls (S3)
 ## d. time since moved dummies require work calculating the last move each wave (S3)
 ## g. Social class (this is frustrating!)
-## i. cohort: this is just derived from birth year but do I need it?
-
-# 6. Sample Weights
-
 
 
 

@@ -5,7 +5,7 @@
 #UPDATE: After talking with Eva I decided the following:
 # 1. I will only focus on women
 # 2. I will NOT include observations where the women are single
-
+# 3. The model that fits this best after testing is M15. Going forward (Script 9) M15 will be the base model
 
 #This script includes the descriptive and regression analysis
 
@@ -1110,14 +1110,14 @@ saveRDS(m20,"m20.rds")
 
 #Parity Predicted Probability Plots
 effect_plot(m20, 
-            pred = ratio_cat2, 
+            pred = ratio_cat2_tm2, 
             pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
             interval = TRUE, 
             cat.geom = "line",
             main.title = "m20:Clock*parity + Ratio*Parity + Period + Tenure + Age; no parents, no singles",
             y.label = "Experencing a Live Birth")
 
-cat_plot(m20, pred = parity, modx = ratio_cat2_tm1,
+cat_plot(m20, pred = parity, modx = ratio_cat2_tm2,
          point.size = 2,
          line.thickness = 0.8,
          geom.alpha = 1,

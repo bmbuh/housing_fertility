@@ -1,10 +1,12 @@
 #Coded by: Brian Buh
 #Started on: 30.08.2022
-#Last Updated:
+#Last Updated: 06.10.2022
 
 library(tidyverse)
 library(haven)
 library(lubridate)
+library(stargazer)
+library(arsenal)
 
 # This script is for uploading cross-sectional and longitudinal survey weights
 
@@ -308,22 +310,94 @@ saveRDS(wght_ukhls, file = "wght_ukhls.rds")
 # Combined ----------------------------------------------------------------
 #--------------------------------------------------------------------------
 
-
-# There are several weight measures extracted for use. I will extract on the cross-sectional weights for each set of samples for the time being.
-# In the future, if I would like to explore other alternatives or longitudinal weights, I can change the selection here.
-
+#BHPS
 wght_bhps2 <- wght_bhps %>%
-  select(pidp, wave, xrwght, xewght, xrwtsw1, xewtsw1, xrwtuk1, xewtuk1)
+  select(pidp, wave, xrwght, xewght, xrwtsw1, xewtsw1, xrwtuk1, xewtuk1) %>% 
+  rename("weight" = "xewght") 
 
+
+# %>% 
+  select(pidp, wave, weight)
+  
+
+#When the weight equals 0.00 the observation is not included for sampling reasons
+wght_bhps2 %>% count(xrwght == 0)
+#There are 84,716 0.00 weights
+wght_bhps2 %>% count(is.na(xewght))
+summary(wght_bhps2$weight)
+wght_bhps2 %>% 
+  ggplot(aes(x = weight)) +
+  geom_histogram()
+
+
+
+
+
+#UKHLS
 wght_ukhls2 <- wght_ukhls%>%
-  select(pidp, wave, indinus_xw, indinbh_xw, indinub_xw)
+  select(pidp, wave, indinus_xw, indinbh_xw, indinub_xw) %>% 
+  mutate(weight = ifelse(is.na(indinub_xw), indinbh_xw, indinub_xw),
+         weight = ifelse(is.na(weight), indinus_xw, weight),
+         wave = wave + 18) %>% 
+  select(pidp, wave, weight)
+
+#When the weight equals 0.00 the observation is not included for sampling reasons
+wght_ukhls2 %>% count(indinub_xw == 0)
+#There are 89,037 0.00 weights
+wght_ukhls2 %>% count(is.na(weight))
+wght_ukhls2 %>% count(wave)
+summary(wght_ukhls2$weight)
+wght_ukhls2 %>% 
+  ggplot(aes(x = weight)) +
+  geom_histogram()
 
 
-#I cannot yet decide how to use the weights because there appears to be several issues with which survey weights to select for each survey wave.
-#Open questions:
-# 1. Long vs x'sectional
-# 2. should I apply "full x'sectional" to the entire sample in that wave or just the specific x'sectional weights to the specific sample?
+#The summary of the weight measures from the BHPS and UKHLS have a very similar distribution!
 
 
+weights <-  
+  bind_rows(wght_bhps2, wght_ukhls2) %>% 
+  arrange(pidp, wave)
+
+weights %>% 
+  ggplot(aes(x = weight)) +
+  geom_histogram()
+
+
+###########################################################################
+# Basic Weights Testing ---------------------------------------------------
+###########################################################################
+
+
+baselinelogit <- glm(formula = event ~ clock + ratio_cat2 + parity + period + age + agesq + tenure,
+                     family = binomial(link = "logit"),
+                     data = hhpart5)
+
+baselineweight <- glm(formula = event ~ clock + ratio_cat2 + parity + period + age + agesq + tenure,
+                     family = binomial(link = "logit"),
+                     data = hhpart5,
+                     weights = weight)
+
+
+summary(baselinelogit)
+summary(baselineweight)
+
+stargazer(baselinelogit, baselineweight, align = TRUE, out = "weighttest.html")
+
+
+### Descriptives
+#separated by parity
+mycontrols <- tableby.control(test = FALSE)
+hhpartstatswght <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + emp, 
+                                data = hhpart5, 
+                                weights = weight,
+                                control = mycontrols)
+labels(hhpartstatswght) <-  c(parity = "Parity", event = "Event", clock = "Exposure", age = "Age",
+                           ratio = "Ratio of Housing to Income", ratio_cat2 = "Ratio of Housing to Income (Cat.)", period = "Period",
+                           tenure = "Housing type", partner = "Partnership status", edu = "Educational attainment", ukborn = "UK Born",
+                           emp = "Activity status")
+summary(hhpartstatswght)
+write2html(hhpartstatswght, "hhpartstatswght_parity_06-10-2022.html") #UPDATE DATE
+write2word(hhpartstatswght, "hhpartstatswght_parity_06-10-2022.docx") #UPDATE DATE
 
 

@@ -34,7 +34,7 @@ library(survminer) #for ggsurvplot
 
 bhps5 <- indhhbhps %>% 
   select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hsroom, lkmove, hhyneti, 
-         gor_dv, qfedhi, mlstat, spinhh, jbstat, plbornc, hgbiom, hgbiof) %>% 
+         gor_dv, qfedhi, mlstat, spinhh, jbstat, plbornc, hgbiom, hgbiof, hhsize, plnowm, plnowy4, paynty) %>% 
   mutate(year = wave + 1990,
          hhyneti = ifelse(hhyneti < 0, NA, hhyneti),
          hhinc = (hhyneti/12),
@@ -93,7 +93,8 @@ bhps5 <- indhhbhps %>%
   fill(emp, .direction = "downup") %>% 
   fill(ukborn, .direction = "downup") %>% 
   ungroup() %>% 
-  select(-qfedhi, -mlstat, -spinhh, -jbstat, -plbornc, -hgbiom, -hgbiof)
+  select(-qfedhi, -mlstat, -spinhh, -jbstat, -plbornc, -hgbiom, -hgbiof) %>% 
+  rename("indinc" = "paynty")
 
   
 saveRDS(bhps5, file = "bhps5.rds")
@@ -104,7 +105,8 @@ saveRDS(bhps5, file = "bhps5.rds")
 
 ukhls5 <- indhhukhls %>% 
   select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove,
-         fihhmnnet3_dv, gor_dv, qfhigh_dv, hiqual_dv, f_qfhighoth, marstat_dv, jbstat, plbornc, hgbiom, hgbiof, hgadoptm, hgadoptf) %>% 
+         fihhmnnet3_dv, gor_dv, qfhigh_dv, hiqual_dv, f_qfhighoth, marstat_dv, jbstat, plbornc, hgbiom, hgbiof, hgadoptm, hgadoptf,
+         hhsize, plnowm, plnowy4, fimnnet_dv) %>% 
   mutate(rent2 = ifelse(rent < 0, NA, rent),
          rent2 = ifelse(rent2 > houscost1_dv, NA, rent2),
          hc = ifelse(!is.na(rent2), rent2, houscost1_dv),
@@ -175,11 +177,11 @@ ukhls5 <- indhhukhls %>%
   fill(emp, .direction = "downup") %>% 
   fill(ukborn, .direction = "downup") %>% 
   ungroup() %>% 
+  rename("indinc" = "fimnnet_dv") %>% 
   select(-qfhigh_dv, -hiqual_dv, -f_qfhighoth, -hiqual_edit, -immedu, -edu_cat, -marstat_dv, -jbstat, -plbornc, -hgbiom, -hgbiof, -hgadoptm, -hgadoptf, -hsrooms, -hsbeds)
   
 saveRDS(ukhls5, file = "ukhls5.rds")
 
-ukhls5 %>% count(lkmove)
 
 # # -------------------------------------------------------------------------
 # # Descriptive plots -------------------------------------------------------
@@ -334,6 +336,7 @@ test2 %>% count(wavegap, obsnum)
 #This df filters individuals with clock errors
 cball2 <- cball1 %>% 
   left_join(., filterna1, by = c("pidp", "wave")) %>% 
+  left_join(., weights, by = c("pidp", "wave")) %>% 
   group_by(pidp) %>% 
   mutate(clockneg = ifelse(clock < 0, 1, NA),
          clockpos = ifelse(clock > 27, 1, NA),

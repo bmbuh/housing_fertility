@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 19.09.2022
-#Last Updated: 03.10.2022
+#Last Updated: 10.10.2022
 
 #UPDATE: After talking with Eva I decided the following:
 # 1. I will only focus on women
@@ -77,16 +77,19 @@ p1 <- hhpart2 %>% filter(parity == 1)
 ind <- hhpart2 %>% distinct(pidp) #17,215 unique individuals
 lad <- hhpart2 %>% distinct(code)
 
-#separated by parity
+#This uses hhpart3! Separated by parity
 mycontrols <- tableby.control(test = FALSE)
-hhpart3stats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + emp, data = hhpart3, control = mycontrols)
+hhpart3stats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + emp + share + oci, 
+                                data = hhpart3, 
+                                weights = weight,
+                                control = mycontrols)
 labels(hhpart3stats) <-  c(parity = "Parity", event = "Event", clock = "Exposure", age = "Age",
                          ratio = "Ratio of Housing to Income", ratio_cat2 = "Ratio of Housing to Income (Cat.)", period = "Period",
                          tenure = "Housing type", partner = "Partnership status", edu = "Educational attainment", ukborn = "UK Born",
-                         emp = "Activity status")
+                         emp = "Activity status", share = "Household income share", oci = "Overcrowding Index")
 summary(hhpart3stats)
-write2html(hhpart3stats, "hhpart3stats_parity_03-10-2022.html") #UPDATE DATE
-write2word(hhpart3stats, "hhpart3stats_parity_03-10-2022.docx") #UPDATE DATE
+write2html(hhpart3stats, "hhpart3stats_parity_10-10-2022.html") #UPDATE DATE
+write2word(hhpart3stats, "hhpart3stats_parity_10-10-2022.docx") #UPDATE DATE
 
 
 
@@ -109,14 +112,15 @@ write2word(hhpart2stats2, "hhpart2stats2_period_21-09-2022.docx") #UPDATE DATE
 # -------------------------------------------------------------------------
 # Descriptive plots -------------------------------------------------------
 # -------------------------------------------------------------------------
+# UPDATED: 10.10.2022
 
-hhpart2 %>% 
+hhpart3 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   ggplot(aes(x = ratio)) + 
   geom_histogram(bins = 10) 
 
 #Distribution of Ratio by Period
-hhpart2 %>% 
+hhpart3 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "10",
@@ -147,10 +151,10 @@ hhpart2 %>%
   ggtitle("Distribution of Ratio of Houseing Cost to Household Income by Period") +
   xlab("") +
   ylab("Percent")
-ggsave("ratio_distribution_period_s8_19-09-2022.png", dpi = 300)
+ggsave("ratio_distribution_period_s8_10-10-2022.png", dpi = 300)
 
 #Distribution of Ratio by Parity
-hhpart2 %>% 
+hhpart3 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "0",
@@ -178,7 +182,7 @@ hhpart2 %>%
   labs(caption = "Parity indicates all households at risk for specific parity. The x-axis scale indicates the lower bound of the group.") +
   xlab("Ratio of housing cost to net household income") +
   ylab("Percent")
-ggsave("ratio_distribution_parity_s8_19-09-2022.png", dpi = 300)
+ggsave("ratio_distribution_parity_s8_10-10-2022.png", dpi = 300)
 
 
 #Age distribution with parents in household
@@ -200,7 +204,7 @@ hhpart %>%
        title = "Age Distribution of Sample: Parent(s) in Household") +
   xlab("Age") +
   ylab("Count")
-ggsave("distribution_age_parenthh_s8_19-09-2022.png", dpi = 300)  
+ggsave("distribution_age_parenthh_s8_10-10-2022.png", dpi = 300)  
 
 
 #Age distribution hhpart2
@@ -217,7 +221,7 @@ hhpart2 %>%
        title = "Age Distribution of Sample: All Women") +
   xlab("Age") +
   ylab("Count")
-ggsave("distribution_hhpart2_s8_03-10-2022.png", dpi = 300)  
+ggsave("distribution_hhpart2_s8_10-10-2022.png", dpi = 300)  
 
 
 #Age distribution hhpart3
@@ -234,7 +238,7 @@ hhpart3 %>%
        title = "Age Distribution of Sample: Partnered Women") +
   xlab("Age") +
   ylab("Count")
-ggsave("distribution_hhpart3_s8_03-10-2022.png", dpi = 300)   
+ggsave("distribution_hhpart3_s8_10-10-2022.png", dpi = 300)   
 
 
 ###########################################################################
@@ -867,6 +871,29 @@ effect_plot(m15,
             main.title = "m15:Clock*parity + Ratio*Parity + Period + Tenure + Age; no parents, no singles",
             y.label = "Experencing a Live Birth")
 
+#Only parities
+cat_plot(m15, pred = parity, modx = ratio_cat2,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
+         pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "m15:Clock*parity + Ratio*Parity + Ratio*Period + Tenure + Age; no parents, no singles",
+         legend.main = "Household income used for housing",
+         colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("m15_3way_parity_S8_06-10-2022.png", dpi = 300)
+
+#With periods
 cat_plot(m15, pred = parity, modx = ratio_cat2, mod2 = period,
          point.size = 2,
          line.thickness = 0.8,
@@ -1129,14 +1156,14 @@ cat_plot(m20, pred = parity, modx = ratio_cat2_tm2,
          mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
-         main.title = "m20:Clock*parity + Ratio_tm1*Parity + Ratio_tm1*Period + Tenure + Age; no parents, no singles",
+         main.title = "m20:Clock*parity + Ratio_tm2*Parity + Ratio_tm2*Period + Tenure + Age; no parents, no singles",
          legend.main = "Household income used for housing",
          colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("m20_3way_parity_period_hclagged_S8_04-10-2022.png", dpi = 300)
+ggsave("m20_3way_parity_period_hclagged2_S8_04-10-2022.png", dpi = 300)
 
 
 

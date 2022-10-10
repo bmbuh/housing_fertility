@@ -6,6 +6,8 @@
 ## hc, hhinc, tenure, hsroom, lkmove, edu, partner, emp, ukborn
 ### this also includes remaking variables: ratio, ratio_cat, ratio_cat2, ratio_cat3
 
+cballlad <- file.choose()
+cballlad <- readRDS(cballlad)
 
 library(tidyverse)
 library(mice)
@@ -39,12 +41,14 @@ parenthh <- cballlad %>% count(parenthh) #NO NA
 
 #housing mediators
 tenure <- cballlad %>% count(tenure) #4846 NA
-hsroom <- cballlad %>% mutate(hsroom = ifelse(hsroom < 0, NA, hsroom)) %>% count(hsroom) #4375 NA
+hsroom <- cballlad %>% mutate(hsroom = ifelse(hsroom < 0, NA, hsroom)) %>% count(hsroom) #309 NA
 tenurehsroom <- cballlad %>% mutate(hsroom = ifelse(hsroom < 0, NA, hsroom)) %>% count(tenure, hsroom) #4068 are NA for both, 307 are NA for hsroom but not tenure, 708 are NA for tenure but not hsroom
 lkmove <- cballlad  %>% count(lkmove) #17610 are NA (or proxy)
+hhsize <- cballlad  %>% count(hhsize) #171 NA
 
 #explanatory variables
 hhinc <- cballlad %>% count(hhinc) #3865 NA
+indinc <- cballlad %>% count(is.na(indinc)) #No NA
 summary(cballlad$hhinc)
 hc <- cballlad %>% count(hc) #6702 NA
 summary(cballlad$hc)
@@ -79,18 +83,29 @@ ladimp <- cballlad %>%
          -istrtdatm, -istrtdaty, -birthm, -birthy, -gor_dv, -survey, -numobs, -isced97,
          -kdob, -bno, -totchild, -kyear, -obsnum, -totobs, -kyear2, -lagwave, -leadwave,
          -wavegap, -diffwave, -nakeep, -clockneg, -clockpos, -naevent, -largediff, -clock2,
-         -name, -lowquar) %>% 
+         -name, -lowquar, -oci, -indshare, #remove oci and indshare here and recreate after imputation
+         -plnowm, -plnowy4
+         ) %>% 
   #change lkmove "I don't know" to NA
   mutate(lkmove = ifelse(lkmove == -1, NA, lkmove),
          lkmove = ifelse(lkmove == 1, 0, ifelse(lkmove == 2, 1, NA)),
          hsroom = as.character(hsroom),
          lkmove = as.character(lkmove),
-         ukborn = as.character(ukborn))
+         ukborn = as.character(ukborn),
+         pidp = as.numeric(pidp),
+         hidp = as.numeric(hidp),
+         hidp = ifelse(hidp <= 0, NA, hidp),
+         hhorig = as.numeric(hhorig),
+         hhorig = ifelse(hhorig <= 0, NA, hhorig),
+         hhsize = as.numeric(hhsize),
+         hhsize = ifelse(hhsize <= 0, NA, hhsize),
+         hsroom = as.numeric(hsroom))
 
+str(ladimp)
 
 #This removes the LAD which we add in later but don't want to compute now
 macro <- cballlad %>% 
-  select(pidp, wave, name, lowquar)
+  select(pidp, wave, name, lowquar, plnowm, plnowy4)
 
 
 #Summary statistics
@@ -101,8 +116,13 @@ str(ladimp)
 summary(ladimp$hhinc) #last observation forward keeps the summary statistics close to the stats with NA (308 NA remaining)
 summary(cballlad$hc)
 summary(ladimp$hc) #last observation forward keeps the summary statistics close to the stats with NA (617 NA remaining)
+summary(ladimp$indinc) #No missing!
+summary(ladimp$hhsize) #171 NA
+summary(ladimp$hsroom) #294 NA
 
-ladimp %>% count(lkmove)
+
+ladimp %>% count(lkmove) #9851 NA
+check <- ladimp %>% count(plnowy4)
 
 # ------------------------------------------------------------------------------------------
 #Imputation --------------------------------------------------------------------------------
@@ -110,7 +130,7 @@ ladimp %>% count(lkmove)
 
 # We run the mice code with 0 iterations 
 imp <-  mice(ladimp, maxit=0) #"cart" = Classification and regression trees
-# ladimp2 = complete(imp, 3)
+ladimp2 = complete(imp, 3)
 
 p_missing <- unlist(lapply(ladimp2, function(x) sum(is.na(x))))/nrow(ladimp2)
 sort(p_missing[p_missing > 0], decreasing = TRUE) #largest missing in 13% with name
@@ -125,10 +145,10 @@ head(predM)
 
 ### Specify a separate imputation model for variables of interest 
 # Continuous variable
-cart <- c("hc", "hhinc")
+pmm <- c("hc", "hhinc", "hsroom", "hhsize")
 
 # Ordered categorical variables 
-poly <- c("hsroom")
+# poly <- c("hsroom") #Not used currently
 
 # Dichotomous variable
 log <- c("lkmove")
@@ -137,8 +157,9 @@ log <- c("lkmove")
 poly2 <- c("tenure", "edu")
 
 # Turn their methods matrix into the specified imputation models
+meth[pmm] <- "pmm"
 meth[cart] <- "cart"
-meth[poly] <- "polr"
+# meth[poly] <- "polr"
 meth[log] <- "logreg"
 meth[poly2] <- "polyreg"
 
@@ -149,7 +170,7 @@ meth
 # process. If you would like to see the process, set print as TRUE
 imp2 <- mice(ladimp, maxit = 5, 
              predictorMatrix = predM, 
-             method = meth, print =  FALSE)
+             print =  FALSE)
 
 # Look at head and tail of imputed values for hc variable 
 head(imp2$imp$hc)
@@ -188,6 +209,8 @@ summary(cballlad$hhinc)
 summary(ladimp2$hhinc) #last observation forward keeps the summary statistics close to the stats with NA (308 NA remaining)
 summary(cballlad$hc)
 summary(ladimp2$hc) #last observation forward keeps the summary statistics close to the stats with NA (617 NA remaining)
+ladimp2 %>% count(is.na(hsroom))
+ladimp2 %>% count(is.na(tenure))
 
 check <- ladimp2 %>% 
   group_by(pidp) %>% 
@@ -209,10 +232,22 @@ check2 <- ladimp2 %>%
 # Make final df with imputed values ---------------------------------------
 # -------------------------------------------------------------------------
 
+room <- ladimp2 %>% count(hsroom)
+
+
+
 hcfert <- ladimp2 %>% 
   left_join(., macro, by = c("pidp", "wave")) %>% 
-  filter(!is.na(tenure), !is.na(hsroom)) %>% 
-  mutate(ratio = hc/hhinc,
+  # filter(!is.na(tenure), !is.na(hsroom)) %>% 
+  mutate(oci = ifelse(hsroom <= hhsize, 1, 0), #oci is the overcrowding index
+         oci = as.factor(oci),
+         indinc = ifelse(indinc < 0, 0, indinc),
+         indshare = indinc/hhinc,
+         indshare = ifelse(indshare > 1, 1, indshare),
+         indshare = ifelse(is.na(indshare), 0, indshare), #some hhinc are 0 resulting in NA (cannot divide by 0)
+         share = ifelse(indshare <= 0.45, "mb", ifelse(indshare >= 0.55, "fb", "equal")),
+         share = fct_relevel(share, c("mb", "equal","fb")),
+         ratio = hc/hhinc,
          ratio = ifelse(ratio > 1, 1, ifelse(ratio < 0, 0, ratio)),
          ratio = ifelse(is.na(ratio), 0, ratio), #there are some observations where the hhinc is 0 (cannot divide by 0)
          ratio_cat = cut(ratio, 
@@ -227,6 +262,24 @@ hcfert <- ladimp2 %>%
                                                 "20-30",
                                                 "30-40",
                                                 "40-100")),
+         ratio_cat2alt = cut(ratio, 
+                          breaks = c(-0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 1),
+                          labels = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100")),
+         ratio_cat2alt = fct_relevel(ratio_cat2, c("20-30",
+                                                "0",
+                                                "0.1-10",
+                                                "10-20",
+                                                "30-40",
+                                                "40-100")),
+         ratio_cat2alt2 = cut(ratio, 
+                             breaks = c(-0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 1),
+                             labels = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100")),
+         ratio_cat2alt2 = fct_relevel(ratio_cat2, c("0.1-10",
+                                                   "0",
+                                                   "10-20",
+                                                   "20-30",
+                                                   "30-40",
+                                                   "40-100")),
          ratio_cat3 = cut(ratio, 
                           breaks = c(-0.1, 0.0, 0.15, 0.3, 0.45, 0.6, 1),
                           labels = c("0", "0.1-15", "15-30", "30-45", "45-60", "60-100")),
@@ -238,13 +291,53 @@ hcfert <- ladimp2 %>%
                                                 "60-100")))
 
 saveRDS(hcfert, file = "hcfert.rds")
-
+str(hcfert)
 
 
 p_missing <- unlist(lapply(hcfert, function(x) sum(is.na(x))))/nrow(hcfert)
 sort(p_missing[p_missing > 0], decreasing = TRUE)
 #There are still 3.8% of lkmove NA and 2.1% of edu
 
+hcfert %>% count(oci, ratio_cat2)
+#Note, if we visualize the data by amount spent and fill with the "oci" dummy, we see that the ratio of housing costs doesn't
+# seem to determine if a family is "overcrowded"
+hcfert %>% count(share)
+hcfert %>% 
+  group_by(wave, share) %>%
+  summarise(count = n()) %>% 
+  mutate(percent = count/sum(count)) %>% 
+  mutate(share = fct_relevel(share, c("mb", "equal","fb"))) %>% 
+  ggplot(aes(x = wave, y = percent, fill = share)) + 
+  geom_bar(stat = "identity", color = "black",  size = 1) +
+  theme_bw()+
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 12), legend.title = element_text(size = 12), axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 12), axis.title.x = element_text(size = 12, hjust = 0.05, vjust = 0), strip.text.x = element_text(size = 12)) +
+  theme(aspect.ratio = 1) +
+  ggtitle("Share of female income contributions to the household") +
+  xlab("Survey Wave") +
+  ylab("Percent")
+#There is a slight shift at wave 18 (start of the UKHLS) which seems to revert back to the previously observed pattern
+ggsave("share_wave_histogram_s7_10-10-2022.png", dpi = 300)
+
+
+#testing the oci variable
+hcfert %>% 
+  group_by(wave, oci) %>%
+  summarise(count = n()) %>% 
+  mutate(percent = count/sum(count)) %>% 
+  ggplot(aes(x = wave, y = percent, fill = oci)) + 
+  geom_bar(stat = "identity", color = "black",  size = 1) +
+  theme_bw()+
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 12), legend.title = element_text(size = 12), axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 12), axis.title.x = element_text(size = 12, hjust = 0.05, vjust = 0), strip.text.x = element_text(size = 12)) +
+  theme(aspect.ratio = 1) +
+  ggtitle("Overcrowding by wave") +
+  xlab("Survey Wave") +
+  ylab("Percent")
+#There is a slight shift at wave 18 (start of the UKHLS) which is likely due to the new sample a slight attrition of house moves in the BHPS
+ggsave("oci_wave_histogram_s7_10-10-2022.png", dpi = 300)
 
 
 

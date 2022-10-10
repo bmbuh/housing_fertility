@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 16.06.2022
-#Last Updated: 04.10.2022
+#Last Updated: 07.10.2022
 
 library(tidyverse)
 library(haven)
@@ -357,13 +357,25 @@ cball2 <- cball1 %>%
          sex = recode(sex,
                       "1" = "Men",
                       "2" = "Women"),
-         agesq = age_dv*age_dv) %>% 
+         agesq = age_dv*age_dv,
+         plnowm = as.numeric(plnowm),
+         plnowm = ifelse(plnowm <= 0, NA, plnowm),
+         plnowy4 = as.numeric(plnowy4),
+         plnowy4 = ifelse(plnowy4 <= 0, NA, plnowy4)) %>% 
   group_by(pidp) %>% 
   fill(sex, .direction = "downup") %>% #There are several sex that are NA (690)
+  fill(hsroom, .direction = "downup") %>% 
+  fill(hhsize, .direction = "downup") %>% 
+  fill(plnowm, .direction = "down") %>% 
+  fill(plnowy4, .direction = "down") %>% 
   ungroup() %>% 
   filter(!is.na(sex)) %>% #43 observations sex is NA so they are removed
   rename("age" = "age_dv") %>% 
-  mutate(ratio_cat2 = cut(ratio, 
+  mutate(oci = ifelse(hsroom <= hhsize, 1, 0), #oci is the overcrowding index
+         indinc = ifelse(indinc < 0, 0, indinc),
+         indshare = indinc/hhinc,
+         indshare = ifelse(indshare > 1, 1, indshare),
+         ratio_cat2 = cut(ratio, 
                          breaks = c(-0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 1),
                          labels = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100")),
          ratio_cat2 = fct_relevel(ratio_cat2, c("10-20",
@@ -402,6 +414,7 @@ check <- cball2 %>%  #There is 2 obs with clock as NA still
   ungroup() %>% 
   filter(check == 1)
 #Conclusion the filters remove 16.3% of total observations
+summary(cball2$indshare)
 
 #Finally, let's see if my main analysis seems to make sense
 clockparitycheck <- cball2 %>% count(clock, event, parity)
@@ -426,18 +439,31 @@ cballlad %>% count(is.na(code))
 #After group the NA is reduced to 326
 
 saveRDS(cballlad, file = "cballlad.rds")
-
+# 
+# 
+# oci <- cballlad %>% 
+#   select(pidp, wave, hhsize, hsroom, edu) %>% 
+#   group_by(pidp) %>% 
+#   fill(hsroom, .direction = "downup") %>% 
+#   fill(hhsize, .direction = "downup") %>% 
+#   ungroup() %>% 
+#   # count(hhsize, hsroom) %>% 
+#   mutate(oci = ifelse(hsroom <= hhsize, 1, 0))
+# 
+# oci %>% count(hhsize)
+# test <- oci %>% count(hsroom)
+# oci %>% count(oci, edu)
 
 # -------------------------------------------------------------------------
 # Descriptive plots -------------------------------------------------------
 # -------------------------------------------------------------------------
-cball2 %>% 
+cballlad %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   ggplot(aes(x = ratio)) + 
   geom_histogram(bins = 10) 
 
 #Distribution of Ratio by Period
-cball2 %>% 
+cballlad %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   mutate(ratio_cat = recode(ratio_cat,
                              "0-10" = "10",
@@ -470,7 +496,7 @@ cball2 %>%
   ggsave("ratio_distribution_period_s5_29-08-2022.png", dpi = 300)
 
 #Distribution of Ratio by Parity
-cball2 %>% 
+cballlad %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "0",
@@ -504,7 +530,7 @@ ggsave("ratio_distribution_parity_s5_29-08-2022.png", dpi = 300)
 
 
 #Age distribution with parents in household
-cball2 %>% 
+cballlad %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 
   mutate(parenthh = as.character(parenthh),
          parenthh = recode(parenthh,

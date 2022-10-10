@@ -1,10 +1,11 @@
 #Coded by: Brian Buh
 #Started on: 06.10.2022
-#Last Updated: 
+#Last Updated: 10.10.2022
 
 # This script continues from S8 after determining the best fit multilevel model was M15
 ###Note: For this script I order the model runs using A#
 
+# install.packages("mediation")
 
 library(tidyverse)
 library(haven)
@@ -13,6 +14,7 @@ library(survival)
 library(survminer)
 library(texreg)
 library(sjPlot) #Use for the plot_model
+library(stargazer)
 library(lme4)
 library(effects)
 library(jtools) #summ function
@@ -22,6 +24,7 @@ library(interactions) #for using cat_plot()
 library(modelsummary)
 library(huxtable)
 library(openxlsx) #For printing huxtable outputs in xlsx
+library(mediation)
 
 #Load data  hhpart (s7)
 hhpart <- file.choose()
@@ -37,9 +40,6 @@ hhpart2 <- hhpart %>%
 hhpart3 <- hhpart2 %>% 
   filter(partner != "single")
 
-# DF with weights
-hhpart5 <- hhpart3 %>% 
-  left_join(., weights, by = c("pidp", "wave"))
 
 
 ###########################################################################
@@ -54,9 +54,21 @@ hhpart5 <- hhpart3 %>%
 # A4: + UK Born
 # A5: + emp + UK Born
 # A6: + emp + edu + UK Born 
+# A6alt: same as A6 with a different ratio_cat2 reference group (20-30%)
+# A6alt2: same as A6 with a different ratio_cat2 reference group (0.1-10%)
 
 ## Weights
 # A7: M15 + weights
+
+## Significance testing
+# A8: continuous ratio + edu + UK Born
+# A9: continuous ratio + edu + UK Born + emp
+# A10: continuous ratio + edu + UK Born + emp
+
+## Mediation analysis
+# Med1.1: Equation without employment (X -> Y)
+# Med1.2: oci on event (M -> Y)
+# Med1.3: Add in the mediator (X -> M -> Y)
 
 
 ###########################################################################
@@ -308,7 +320,7 @@ ggsave("a5_control_emp+ukborn_S9_06_10-2022.png", dpi = 300)
 
 
 # Analysis A6 --------------------------------------------------------------
-# emp + ukborn
+# emp + edu + ukborn
 a6 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + emp + edu + ukborn + (1|pidp) + (1|code),
             data = hhpart3,
             family = binomial,
@@ -355,6 +367,117 @@ cat_plot(a6, pred = parity, modx = ratio_cat2,
 ggsave("a6_control_emp+edu+ukborn_S9_06_10-2022.png", dpi = 300)
 
 
+# Analysis A6  Alternative --------------------------------------------------------------
+# emp + edu + ukborn (I switch the reference group for ratio_cat2 to 20-30% to see how it affects the p-values)
+# the variable is called "ratio_cat2alt"
+a6alt <- glmer(formula = event ~ clock*parity + ratio_cat2alt*parity + ratio_cat2alt*period + tenure + age + agesq + emp + edu + ukborn + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5))) 
+
+summary(a6alt)
+summ(a6alt, exp = TRUE)
+
+#save
+saveRDS(a6alt,"a6alt.rds")
+# readRDS("a6alt.rds")
+# a6alt <- readRDS("S:/r_projects/housing_fertility/model_objects/a6alt.rds")
+
+
+#Parity Predicted Probability Plots
+effect_plot(a6alt, 
+            pred = ratio_cat2alt, 
+            pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "a6alt:Clock*parity + Ratio*Parity + Ratio*Period + Tenure + Age + Emp + Edu + UKborn",
+            y.label = "Experencing a Live Birth")
+
+cat_plot(a6alt, pred = parity, modx = ratio_cat2alt,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
+         pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "a6alt:Clock*parity + Ratio*Parity + Ratio*Period + Tenure + Age + Emp + Edu + UKborn; ref. 20-30%",
+         legend.main = "Household income used for housing",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("a6alt_control_emp+edu+ukborn_S9_10_10-2022.png", dpi = 300)
+
+#This makes little difference (actually has worse statistical significance)
+
+# Analysis A6  Alternative  2--------------------------------------------------------------
+# emp + edu + ukborn (I switch the reference group for ratio_cat2 to 0.1-10%% to see how it affects the p-values)
+# the variable is called "ratio_cat2alt2"
+a6alt2 <- glmer(formula = event ~ clock*parity + ratio_cat2alt2*parity + ratio_cat2alt2*period + tenure + age + agesq + emp + edu + ukborn + (1|pidp) + (1|code),
+               data = hhpart3,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5))) 
+
+summary(a6alt2)
+summ(a6alt2, exp = TRUE)
+
+#save
+saveRDS(a6alt2,"a6alt2.rds")
+# readRDS("a6alt2.rds")
+# a6alt2 <- readRDS("S:/r_projects/housing_fertility/model_objects/a6alt2.rds")
+
+
+#Parity Predicted Probability Plots
+effect_plot(a6alt2, 
+            pred = ratio_cat2alt2, 
+            pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "a6alt2:Clock*parity + Ratio*Parity + Ratio*Period + Tenure + Age + Emp + Edu + UKborn",
+            y.label = "Experencing a Live Birth")
+
+cat_plot(a6alt2, pred = parity, modx = ratio_cat2alt2,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
+         pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "a6alt2:Clock*parity + Ratio*Parity + Ratio*Period + Tenure + Age + Emp + Edu + UKborn; ref. 0.1-10%",
+         legend.main = "Household income used for housing",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("a6alt2_control_emp+edu+ukborn_S9_10_10-2022.png", dpi = 300)
+
+#This makes little difference (actually has worse statistical significance)
+
+# -------------------------------------------------------------------------
+# Output ------------------------------------------------------------------
+# -------------------------------------------------------------------------
+
+# Tables Combined
+# M15 is the base model; A1-A6 add controls stepwise
+stargazer(m15, a1, a2, a3, a4, a5, a6,
+          align = TRUE,
+          out = "control_testing.html",
+          column.labels = c("m15", "a1", "a2", "a3", "a4", "a5", "a6"))
+
 
 
 
@@ -366,7 +489,7 @@ ggsave("a6_control_emp+edu+ukborn_S9_06_10-2022.png", dpi = 300)
 # Analysis A7 --------------------------------------------------------------
 # weights
 a7 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + emp + (1|pidp) + (1|code),
-            data = hhpart5,
+            data = hhpart3,
             family = binomial,
             control = glmerControl(optimizer = "bobyqa",
                                    optCtrl = list(maxfun = 2e5)),
@@ -414,6 +537,101 @@ ggsave("a7_weights_S9_06_10-2022.png", dpi = 300)
 
 
 
+
+###########################################################################
+# Significance Testing ----------------------------------------------------
+###########################################################################
+
+# A8: continuous ratio + edu + UK Born
+a8 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn 
+            + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5))) 
+summary(a8)
+summ(a8, exp = TRUE)
+saveRDS(a8,"a8.rds")
+
+# A9: continuous ratio + edu + UK Born + emp
+a9 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn + emp 
+            + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5))) 
+summary(a9)
+summ(a9, exp = TRUE)
+saveRDS(a9,"a9.rds")
+
+# A10: continuous ratio + edu + UK Born + emp
+a10 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn + emp + oci 
+             + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5))) 
+summary(a10)
+summ(a10, exp = TRUE)
+saveRDS(a10,"a10.rds")
+
+# -------------------------------------------------------------------------
+# Output ------------------------------------------------------------------
+# -------------------------------------------------------------------------
+
+# Tables Combined
+stargazer(a8, a9, a10,
+          align = TRUE,
+          out = "significance_testing.html",
+          column.labels = c("a8", "a9", "a10"))
+
+
+###########################################################################
+# Mediation Analysis ------------------------------------------------------
+###########################################################################
+
+# There is one potential mediator of housing cost on fertility
+# 1. Available Space
+
+
+# -------------------------------------------------------------------------
+# Available Space ---------------------------------------------------------
+# -------------------------------------------------------------------------
+
+# Step 1: X -> Y (ratio_cat2 -> event)
+med1.1 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + edu + ukborn + (1|pidp) + (1|code),
+               data = hhpart3,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5))) 
+summary(med1.1)
+saveRDS(med1.1,"med1.1.rds")
+
+
+# Step 2: X -> M (ratio_cat2 -> oci)
+### OCI MUST BE EITHER NUMERIC OR A FACTOR!!!!!!!!!
+med1.2 <- glmer(formula = oci ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + edu + ukborn + (1|pidp) + (1|code),
+                data = hhpart3,
+                family = binomial,
+                control = glmerControl(optimizer = "bobyqa",
+                                       optCtrl = list(maxfun = 2e5))) 
+summary(med1.2)
+saveRDS(med1.2,"med1.2.rds")
+
+# Step 3: X -> M -> Y (ratio_cat2 -> oci -> event)
+med1.3 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + oci + tenure + age + agesq + edu + ukborn + (1|pidp) + (1|code),
+                data = hhpart3,
+                family = binomial,
+                control = glmerControl(optimizer = "bobyqa",
+                                       optCtrl = list(maxfun = 2e5))) 
+summary(med1.3)
+summ(med1.3, exp = TRUE)
+saveRDS(med1.3,"med1.3.rds")
+
+# Mediation Analysis
+med1.result <- mediate(med1.2, med1.3, treat = "ratio_cat2", mediator = "oci")
+summary(med1.result)
+saveRDS(med1.result,"med1.result.rds")
 
 
 

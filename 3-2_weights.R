@@ -310,13 +310,11 @@ saveRDS(wght_ukhls, file = "wght_ukhls.rds")
 # Combined ----------------------------------------------------------------
 #--------------------------------------------------------------------------
 
+####Look at the issue of xrwght vs xewght
 #BHPS
 wght_bhps2 <- wght_bhps %>%
   select(pidp, wave, xrwght, xewght, xrwtsw1, xewtsw1, xrwtuk1, xewtuk1) %>% 
-  rename("weight" = "xewght") 
-
-
-# %>% 
+  rename("weight" = "xewght") %>% 
   select(pidp, wave, weight)
   
 
@@ -358,6 +356,8 @@ wght_ukhls2 %>%
 weights <-  
   bind_rows(wght_bhps2, wght_ukhls2) %>% 
   arrange(pidp, wave)
+
+saveRDS(weights, file = "weights.rds") 
 
 weights %>% 
   ggplot(aes(x = weight)) +

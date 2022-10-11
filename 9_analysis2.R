@@ -59,11 +59,20 @@ hhpart3 <- hhpart2 %>%
 
 ## Weights
 # A7: M15 + weights
+### For comparing weights versus non-weighted
+# n1: + edu + UK Born
+# w1: + edu + UK Born + weight
+# n2: + edu + UK Born + tenure
+# w2: + edu + UK Born + tenure + weight
+# n3: + edu + UK Born + tenure + emp + oci
+# w3: + edu + UK Born + tenure + emp + oci + weight
 
 ## Significance testing
 # A8: continuous ratio + edu + UK Born
-# A9: continuous ratio + edu + UK Born + emp
-# A10: continuous ratio + edu + UK Born + emp
+# A9: continuous ratio + edu + UK Born + tenure
+# A10: continuous ratio + edu + UK Born + tenure + emp
+# A11: continuous ratio + edu + UK Born + tenure + emp + oci
+# A12: continuous ratio + edu + UK Born + tenure + emp + oci + share
 
 ## Mediation analysis
 # Med1.1: Equation without employment (X -> Y)
@@ -535,6 +544,88 @@ cat_plot(a7, pred = parity, modx = ratio_cat2,
 ggsave("a7_weights_S9_06_10-2022.png", dpi = 300)
 
 
+# -------------------------------------------------------------------------
+# Weight comparison on model choices --------------------------------------
+# -------------------------------------------------------------------------
+
+n1 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5))) 
+
+summary(n1)
+summ(n1, exp = TRUE)
+saveRDS(n1,"n1.rds")
+
+
+w1 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5)),
+            weights = weight) 
+
+summary(w1)
+summ(w1, exp = TRUE)
+saveRDS(w1,"w1.rds")
+
+
+n2 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + emp + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5))) 
+
+summary(n2)
+summ(n2, exp = TRUE)
+saveRDS(n2,"n2.rds")
+
+
+w2 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + emp + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5)),
+            weights = weight) 
+
+summary(w2)
+summ(w2, exp = TRUE)
+saveRDS(w2,"w2.rds")
+
+n3 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + emp + oci + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5))) 
+
+summary(n3)
+summ(n3, exp = TRUE)
+saveRDS(n3,"n3.rds")
+
+
+w3 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + emp + oci + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5)),
+            weights = weight) 
+
+summary(w3)
+summ(w3, exp = TRUE)
+saveRDS(w3,"w3.rds")
+
+
+# -------------------------------------------------------------------------
+# Output ------------------------------------------------------------------
+# -------------------------------------------------------------------------
+
+# Tables Combined
+stargazer(n1, w1, n2, w2, n3, w3,
+          align = TRUE,
+          out = "weight_testing.html",
+          column.labels = c( "n1", "w1", "n2", "w2", "n3", "w3"))
+
 
 
 
@@ -543,7 +634,7 @@ ggsave("a7_weights_S9_06_10-2022.png", dpi = 300)
 ###########################################################################
 
 # A8: continuous ratio + edu + UK Born
-a8 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn 
+a8 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + age + agesq + edu + ukborn 
             + (1|pidp) + (1|code),
             data = hhpart3,
             family = binomial,
@@ -553,8 +644,16 @@ summary(a8)
 summ(a8, exp = TRUE)
 saveRDS(a8,"a8.rds")
 
-# A9: continuous ratio + edu + UK Born + emp
-a9 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn + emp 
+effect_plot(a8, 
+            pred = ratio, 
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "A8: continuous ratio",
+            y.label = "Experencing a Live Birth")
+ggsave("a8_continious_S9_11_10-2022.png", dpi = 300)
+
+# A9: continuous ratio + tenure + edu + UK Born
+a9 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn 
             + (1|pidp) + (1|code),
             data = hhpart3,
             family = binomial,
@@ -564,9 +663,19 @@ summary(a9)
 summ(a9, exp = TRUE)
 saveRDS(a9,"a9.rds")
 
-# A10: continuous ratio + edu + UK Born + emp
-a10 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn + emp + oci 
-             + (1|pidp) + (1|code),
+effect_plot(a9, 
+            pred = ratio, 
+            # pred.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"),
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "A9: continuous ratio + tenure + edu + UK Born",
+            y.label = "Experencing a Live Birth")
+ggsave("a9_continious+tenure_S9_11_10-2022.png", dpi = 300)
+
+
+# A10: continuous ratio + tenure + edu + UK Born + emp
+a10 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn + emp 
+            + (1|pidp) + (1|code),
             data = hhpart3,
             family = binomial,
             control = glmerControl(optimizer = "bobyqa",
@@ -575,15 +684,61 @@ summary(a10)
 summ(a10, exp = TRUE)
 saveRDS(a10,"a10.rds")
 
+effect_plot(a10, 
+            pred = ratio, 
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "A10: continuous ratio + tenure + emp",
+            y.label = "Experencing a Live Birth")
+ggsave("a10_continious_S9_11_10-2022.png", dpi = 300)
+
+# a11: continuous ratio + tenure + edu + UK Born + emp + oci
+a11 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn + emp + oci 
+             + (1|pidp) + (1|code),
+            data = hhpart3,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5))) 
+summary(a11)
+summ(a11, exp = TRUE)
+saveRDS(a11,"a11.rds")
+
+effect_plot(a11, 
+            pred = ratio, 
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "A11: continuous ratio + tenure + emp + oci ",
+            y.label = "Experencing a Live Birth")
+ggsave("a11_continious_S9_11_10-2022.png", dpi = 300)
+
+# a12: continuous ratio + tenure + edu + UK Born + emp + oci + share
+a12 <- glmer(formula = event ~ clock*parity + ratio*parity + ratio*period + tenure + age + agesq + edu + ukborn + emp + oci + share
+             + (1|pidp) + (1|code),
+             data = hhpart3,
+             family = binomial,
+             control = glmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun = 2e5))) 
+summary(a12)
+summ(a12, exp = TRUE)
+saveRDS(a12,"a12.rds")
+
+effect_plot(a12, 
+            pred = ratio, 
+            interval = TRUE, 
+            cat.geom = "line",
+            main.title = "A12: continuous ratio + tenure + emp + oci + share",
+            y.label = "Experencing a Live Birth")
+ggsave("a12_continious_S9_11_10-2022.png", dpi = 300)
+
 # -------------------------------------------------------------------------
 # Output ------------------------------------------------------------------
 # -------------------------------------------------------------------------
 
 # Tables Combined
-stargazer(a8, a9, a10,
+stargazer(a8, a9, a10, a11, a12, 
           align = TRUE,
           out = "significance_testing.html",
-          column.labels = c("a8", "a9", "a10"))
+          column.labels = c( "a8", "a9", "a10", "a11", "a12"))
 
 
 ###########################################################################
@@ -609,13 +764,13 @@ saveRDS(med1.1,"med1.1.rds")
 
 
 # Step 2: X -> M (ratio_cat2 -> oci)
-### OCI MUST BE EITHER NUMERIC OR A FACTOR!!!!!!!!!
 med1.2 <- glmer(formula = oci ~ clock*parity + ratio_cat2*parity + ratio_cat2*period + tenure + age + agesq + edu + ukborn + (1|pidp) + (1|code),
                 data = hhpart3,
                 family = binomial,
                 control = glmerControl(optimizer = "bobyqa",
                                        optCtrl = list(maxfun = 2e5))) 
 summary(med1.2)
+summ(med1.2, exp = TRUE)
 saveRDS(med1.2,"med1.2.rds")
 
 # Step 3: X -> M -> Y (ratio_cat2 -> oci -> event)
@@ -635,10 +790,48 @@ saveRDS(med1.result,"med1.result.rds")
 
 
 
+###########################################################################
+# Separate parity testing -------------------------------------------------
+###########################################################################
 
+# For the parity specific models the following is done:
+# 1. Create df specifric for each risk parity
+# 2. remove interactions for parity
+# 3. remove the individual level random effect
 
+hhpart3p1 <- hhpart3 %>% filter(parity == 1)
+hhpart3p2 <- hhpart3 %>% filter(parity == 2)
+hhpart3p3 <- hhpart3 %>% filter(parity == 3)
 
+# p1.1: parity 1 - all controls for now
+p1.1 <- glmer(formula = event ~ clock + ratio_cat2 + ratio_cat2*period + tenure + age + agesq + edu + ukborn + emp + oci  + (1|code),
+             data = hhpart3p1,
+             family = binomial,
+             control = glmerControl(optimizer = "bobyqa",
+                                    optCtrl = list(maxfun = 2e5))) 
+summary(p1.1)
+summ(p1.1, exp = TRUE)
+saveRDS(p1.1,"p1.1.rds")
 
+# p2.1
+p2.1 <- glmer(formula = event ~ clock + ratio_cat2 + ratio_cat2*period + tenure + age + agesq + edu + ukborn + emp + oci  + (1|code),
+              data = hhpart3p2,
+              family = binomial,
+              control = glmerControl(optimizer = "bobyqa",
+                                     optCtrl = list(maxfun = 2e5))) 
+summary(p2.1)
+summ(p2.1, exp = TRUE)
+saveRDS(p2.1,"p2.1.rds")
+
+# p3.1
+p3.1 <- glmer(formula = event ~ clock + ratio_cat2 + ratio_cat2*period + tenure + age + agesq + edu + ukborn + emp + oci  + (1|code),
+              data = hhpart3p3,
+              family = binomial,
+              control = glmerControl(optimizer = "bobyqa",
+                                     optCtrl = list(maxfun = 2e5))) 
+summary(p3.1)
+summ(p3.1, exp = TRUE)
+saveRDS(p3.1,"p3.1.rds")
 
 
 

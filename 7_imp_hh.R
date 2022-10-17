@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 13.09.2022
-#Last Updated: 19.09.2022
+#Last Updated: 13.10.2022
 
 #This script imputs missing data for the following variables:
 ## hc, hhinc, tenure, hsroom, lkmove, edu, partner, emp, ukborn
@@ -76,10 +76,11 @@ ladimp <- cballlad %>%
   fill(emp, .direction = "downup") %>% 
   fill(ukborn, .direction = "downup") %>% 
   fill(hsroom, .direction = "down") %>% 
+  fill(hsownd, .direction = "down") %>% 
   ungroup() %>% 
   dplyr::filter(!is.na(partner), !is.na(emp), !is.na(ukborn)) %>% 
   #There are many variables left from the EHA process that I remove here
-  select(-ratio, -ratiodummy, -ratio_cat, -ratio_cat2, -ratio_cat3, -tenure_dv, -hsownd,
+  dplyr::select(-ratio, -ratiodummy, -ratio_cat, -ratio_cat2, -ratio_cat3, -tenure_dv,
          -istrtdatm, -istrtdaty, -birthm, -birthy, -gor_dv, -survey, -numobs, -isced97,
          -kdob, -bno, -totchild, -kyear, -obsnum, -totobs, -kyear2, -lagwave, -leadwave,
          -wavegap, -diffwave, -nakeep, -clockneg, -clockpos, -naevent, -largediff, -clock2,
@@ -105,7 +106,7 @@ str(ladimp)
 
 #This removes the LAD which we add in later but don't want to compute now
 macro <- cballlad %>% 
-  select(pidp, wave, name, lowquar, plnowm, plnowy4)
+  dplyr::select(pidp, wave, name, lowquar, plnowm, plnowy4)
 
 
 #Summary statistics
@@ -119,10 +120,9 @@ summary(ladimp$hc) #last observation forward keeps the summary statistics close 
 summary(ladimp$indinc) #No missing!
 summary(ladimp$hhsize) #171 NA
 summary(ladimp$hsroom) #294 NA
-
-
 ladimp %>% count(lkmove) #9851 NA
-check <- ladimp %>% count(plnowy4)
+
+
 
 # ------------------------------------------------------------------------------------------
 #Imputation --------------------------------------------------------------------------------
@@ -232,15 +232,12 @@ check2 <- ladimp2 %>%
 # Make final df with imputed values ---------------------------------------
 # -------------------------------------------------------------------------
 
-room <- ladimp2 %>% count(hsroom)
-
-
-
 hcfert <- ladimp2 %>% 
   left_join(., macro, by = c("pidp", "wave")) %>% 
   # filter(!is.na(tenure), !is.na(hsroom)) %>% 
   mutate(oci = ifelse(hsroom <= hhsize, 1, 0), #oci is the overcrowding index
-         oci = as.factor(oci),
+         oci = as.numeric(oci),
+         ownout = ifelse(hsownd == 1 & hc == 0, 1, 0),
          indinc = ifelse(indinc < 0, 0, indinc),
          indshare = indinc/hhinc,
          indshare = ifelse(indshare > 1, 1, indshare),
@@ -293,6 +290,7 @@ hcfert <- ladimp2 %>%
 saveRDS(hcfert, file = "hcfert.rds")
 str(hcfert)
 
+hcfert %>% count(ownout)
 
 p_missing <- unlist(lapply(hcfert, function(x) sum(is.na(x))))/nrow(hcfert)
 sort(p_missing[p_missing > 0], decreasing = TRUE)
@@ -363,13 +361,13 @@ partner <-
   bind_rows(bhps5, ukhls5) %>%
   mutate(age_dv = ifelse(is.na(age_dv), year - birthy, age_dv)) %>% 
   rename("age" = "age_dv") %>% 
-  select(pidp, wave, hidp, sex, edu, emp, partner, age) %>% 
+  dplyr::select(pidp, wave, hidp, sex, edu, emp, partner, age) %>% 
   rename("partedu" = "edu") %>% 
   rename("partemp" = "emp") %>% 
   rename("partage" = "age") %>% 
   # rename("partclock" = "clock") %>% 
   filter(partner != "single", sex == 1) %>% 
-  select(-partner, -sex, -pidp)
+  dplyr::select(-partner, -sex, -pidp)
 
 # Step 3: combine the df
 hhpart <- hh %>% 
@@ -382,7 +380,7 @@ saveRDS(hhpart, file = "hhpart.rds")
 # Step 4: how many waves are NA for partner for non-single women?
 natest <- hhpart %>% 
   filter(partner != "single", is.na(partage))
-#There are 23,302 observations where the woman is NOT single but the partner's information is missing
+#There are 9,588 (7.4%) observations where the woman is NOT single but the partner's information is missing
 ### This is likely be due to the fact that some partner's were censored out, maybe try to get partner info from larger df
 summary(natest$age) #This shows that the median age of missing partner details is 38 (likely censored men)
 ### Update, using the earlier dfs bhps5 & ukhls5 reduced the NA to 9,587 partners (41.1% or 7.4% of all observations)

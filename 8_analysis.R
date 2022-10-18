@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 19.09.2022
-#Last Updated: 10.10.2022
+#Last Updated: 14.10.2022
 
 #UPDATE: After talking with Eva I decided the following:
 # 1. I will only focus on women
@@ -72,10 +72,18 @@ hhpart4 %>% count(is.na(ratio_cat2_tm2)) #NA = 24568 [33.6%]
 # Descriptive statistics  -------------------------------------------------
 # -------------------------------------------------------------------------
 
-event <- hhpart2 %>% count(event, parity) #6,649 events (3,089 parity one; 2,552 parity two; 1,008 parity three)
-p1 <- hhpart2 %>% filter(parity == 1)
-ind <- hhpart2 %>% distinct(pidp) #17,215 unique individuals
-lad <- hhpart2 %>% distinct(code)
+event <- hhpart3 %>% count(event, parity) #5,987 events (2,834 parity one; 2,285 parity two; 8,68 parity three)
+p1 <- hhpart3 %>% filter(parity == 1, event == 1)
+summary(p1$clock)
+sd(p1$clock)
+p2 <- hhpart3 %>% filter(parity == 2, event == 1)
+summary(p2$clock)
+sd(p2$clock)
+p3 <- hhpart3 %>% filter(parity == 3, event == 1)
+summary(p3$clock)
+sd(p3$clock)
+ind <- hhpart3 %>% distinct(pidp, parity) %>% count(parity) #13,145 unique individuals
+eventlad <- hhpart3 %>% distinct(code)
 
 #This uses hhpart3! Separated by parity
 mycontrols <- tableby.control(test = FALSE)
@@ -914,6 +922,27 @@ cat_plot(m15, pred = parity, modx = ratio_cat2, mod2 = period,
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
 ggsave("m15_3way_parity_period_S8_21-09-2022.png", dpi = 300)
+
+#With periods
+cat_plot(m15, pred = period, modx = ratio_cat2,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "10%", "20%", "30%", "40%", "40-100%"),
+         pred.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "m15:Clock*parity + Ratio*Parity + Ratio*Period + Tenure + Age; no parents, no singles",
+         legend.main = "Household income used for housing",
+         colors = c("#A3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("m15_3way_period_S8_17-10-2022.png", dpi = 300)
 
 
 # Analysis M16 --------------------------------------------------------------

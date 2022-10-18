@@ -285,7 +285,12 @@ hcfert <- ladimp2 %>%
                                                 "0.1-15",
                                                 "30-45",
                                                 "45-60",
-                                                "60-100")))
+                                                "60-100")),
+         age_cat = case_when(age >= 18 & age <= 24 ~ "18-24",
+                            age >= 25 & age <= 29 ~ "25-28",
+                            age >= 30 & age <= 34 ~ "30-34",
+                            age >= 35 & age <= 39 ~ "25-39",
+                            age >= 40 & age <= 45 ~ "40-45"))
 
 saveRDS(hcfert, file = "hcfert.rds")
 str(hcfert)
@@ -360,11 +365,10 @@ hh <- hcfert %>%
 partner <- 
   bind_rows(bhps5, ukhls5) %>%
   mutate(age_dv = ifelse(is.na(age_dv), year - birthy, age_dv)) %>% 
-  rename("age" = "age_dv") %>% 
-  dplyr::select(pidp, wave, hidp, sex, edu, emp, partner, age) %>% 
+  dplyr::select(pidp, wave, hidp, sex, edu, emp, partner, age_dv) %>% 
   rename("partedu" = "edu") %>% 
   rename("partemp" = "emp") %>% 
-  rename("partage" = "age") %>% 
+  rename("partage" = "age_dv") %>% 
   # rename("partclock" = "clock") %>% 
   filter(partner != "single", sex == 1) %>% 
   dplyr::select(-partner, -sex, -pidp)

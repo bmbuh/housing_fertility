@@ -41,8 +41,11 @@ hhpart2 <- hhpart %>%
 hhpart3 <- hhpart2 %>% 
   dplyr::filter(partner != "single")
 
-hhpart3 %>% count(ownout)
 
+# DF for parity specific models
+hhpart3p1 <- hhpart3 %>% filter(parity == 1)
+hhpart3p2 <- hhpart3 %>% filter(parity == 2)
+hhpart3p3 <- hhpart3 %>% filter(parity == 3)
 
 ###########################################################################
 # Models ------------------------------------------------------------------
@@ -1141,7 +1144,7 @@ modelsummary(marginstest2,  output = "marginstest2.html", stars = TRUE)
 #Parity 1:
 
 # Step 1: X -> Y (ratio -> event)
-medp1x <- glmer(formula = event ~ clock + ratio + ratio*period + tenure + agesq + edu + ukborn + emp + (1|code),
+medp1x <- glmer(formula = event ~ clock + ratio + ratio*period + tenure + age_cat + agesq + edu + ukborn + emp + (1|code),
               data = hhpart3p1,
               family = binomial,
               weights = weight,
@@ -1150,7 +1153,10 @@ medp1x <- glmer(formula = event ~ clock + ratio + ratio*period + tenure + agesq 
 summary(medp1x)
 summ(medp1x, exp = TRUE)
 saveRDS(medp1x,"medp1x.rds")
+medp1xm <- margins(medp1x)
+summary(medp1xm)
 
+#Testing for adding an "own outright" dummy
 medp1xtest <- glmer(formula = event ~ clock + ratio + ratio*period + tenure + agesq + edu + ukborn + emp + ownout + (1|code),
                 data = hhpart3p1,
                 family = binomial,
@@ -1171,6 +1177,8 @@ medp1m <- glmer(formula = oci ~ clock + ratio + ratio*period + tenure + agesq + 
 summary(medp1m)
 summ(medp1m, exp = TRUE)
 saveRDS(medp1m,"medp1m.rds")
+medp1mm <- margins(medp1m)
+summary(medp1mm)
 
 medp1mtest <- glmer(formula = oci ~ clock + ratio + ratio*period + tenure + agesq + edu + ukborn + emp + ownout + (1|code),
                 data = hhpart3p1,
@@ -1190,6 +1198,8 @@ medp1y <- glmer(formula = event ~ clock + ratio + ratio*period + oci + tenure  +
 summary(medp1y)
 summ(medp1y, exp = TRUE)
 saveRDS(medp1y,"medp1y.rds")
+medp1ym <- margins(medp1y)
+summary(medp1ym)
 
 medp1ytest <- glmer(formula = event ~ clock + ratio + ratio*period + oci + tenure  + agesq + edu + ukborn  + emp + ownout + (1|code),
                 data = hhpart3p1,
@@ -1228,6 +1238,7 @@ medp2x <- glmer(formula = event ~ clock + ratio + ratio*period + tenure + agesq 
 summary(medp2x)
 summ(medp2x, exp = TRUE)
 saveRDS(medp2x,"medp2x.rds")
+
 
 medp2xtest <- glmer(formula = event ~ clock + ratio + ratio*period + tenure + agesq + edu + ukborn + emp + ownout + (1|code),
                 data = hhpart3p2,

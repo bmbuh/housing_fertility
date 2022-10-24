@@ -85,6 +85,38 @@ sd(p3$clock)
 ind <- hhpart3 %>% distinct(pidp, parity) %>% count(parity) #13,145 unique individuals
 eventlad <- hhpart3 %>% distinct(code)
 
+obs <- hhpart3 %>% 
+  group_by(pidp) %>% 
+  mutate(obs = length(pidp)) %>% 
+  ungroup()
+summary(obs$obs)
+sd(obs$obs)
+
+obsp1 <- hhpart3p1 %>%
+  filter(parity == 1) %>% 
+  group_by(pidp) %>% 
+  mutate(obs = length(pidp)) %>% 
+  ungroup()
+summary(obsp1$obs)
+sd(obsp1$obs)
+
+obsp2 <- hhpart3p2 %>%
+  filter(parity == 2) %>% 
+  group_by(pidp) %>% 
+  mutate(obs = length(pidp)) %>% 
+  ungroup()
+summary(obsp2$obs)
+sd(obsp2$obs)
+
+obsp3 <- hhpart3p3 %>%
+  filter(parity == 3) %>% 
+  group_by(pidp) %>% 
+  mutate(obs = length(pidp)) %>% 
+  ungroup()
+summary(obsp3$obs)
+sd(obsp3$obs)
+
+
 #This uses hhpart3! Separated by parity
 mycontrols <- tableby.control(test = FALSE)
 hhpart3stats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + emp + share + oci, 
@@ -156,7 +188,7 @@ hhpart3 %>%
   # labs(fill = "Activity Status") +
   # scale_fill_manual(labels = c("Full-time", "Part-time", "Employed - NA", "Self-employed", "Unemployed", "Out of LF"),
   #                   values = c("full time", "part time", "paid - NA", "self-employed", "unemployed", "out of LF")) +
-  ggtitle("Distribution of Ratio of Houseing Cost to Household Income by Period") +
+  ggtitle("Distribution of Ratio of Housing Cost to Household Income by Period") +
   xlab("") +
   ylab("Percent")
 ggsave("ratio_distribution_period_s8_10-10-2022.png", dpi = 300)

@@ -1,15 +1,13 @@
 #Coded by: Brian Buh
 #Started on: 16.06.2022
-#Last Updated: 07.10.2022
+#Last Updated: 13.10.2022
 
 library(tidyverse)
 library(haven)
 library(lubridate)
-library(survival) #for kmtest
-library(survminer) #for ggsurvplot
-# library(data.table) #Used for dates that dplyr automatically changes to numeric (not used in the end)
 
-#Use df: indhhbhps, indhhukhls, allfert
+
+#Use df: indhhbhps, indhhukhls, allfert, weights (added in cball2), lad_values (added in cballlad)
 
 # Sample selection:
 # 1. Remove BHPS Wave 1 (done in third code block cball1)
@@ -32,12 +30,15 @@ library(survminer) #for ggsurvplot
 # BHPS --------------------------------------------------------------------
 ############################################################################
 
+indhhbhps %>% count(plbornc)
+
 bhps5 <- indhhbhps %>% 
-  select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hsroom, lkmove, hhyneti, 
+  dplyr::select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hsroom, lkmove, hhyneti, loctax,
          gor_dv, qfedhi, mlstat, spinhh, jbstat, plbornc, hgbiom, hgbiof, hhsize, plnowm, plnowy4, paynty) %>% 
   mutate(year = wave + 1990,
+         loctax = ifelse(loctax < 0, NA, loctax),
          hhyneti = ifelse(hhyneti < 0, NA, hhyneti),
-         hhinc = (hhyneti/12),
+         hhinc = ((hhyneti/12)-loctax),
          xphsn = ifelse(xphsn == -9 | xphsn == -8 | xphsn == -7, NA, xphsn),
          xpmg = ifelse(xpmg < 0, NA, xpmg),
          rent = ifelse(rent == -3 | rent == -4, 0, rent), #"-3" is coded for 100% rent rebate; "-4" is coded as some other one off rent free
@@ -51,20 +52,21 @@ bhps5 <- indhhbhps %>%
                             year >= 2008 & year <= 2012 ~ "2008-2012",
                             year >= 2013 & year <= 2021 ~ "2013-2021")) %>% 
   relocate("year", .after = "wave") %>% 
-  # filter(wave != 1) %>% #I have to remove Wave 1, more than 50% of all housing cost variables are missing or wrong
   mutate(hc = xphsn,
          hc = ifelse(is.na(xpmg) & is.na(rent) & is.na(rentg_bh) & hc == 0 & tenure_dv != 1, NA, hc),
          hc2 = ifelse(rent < hc, rent, hc),
          hc2 = ifelse(is.na(hc2), hc, hc2)) %>%
-  select(-hc) %>%
+  dplyr::select(-hc) %>%
   rename("hc" = "hc2") %>%
   rename("hsownd" = "hsownd_bh") %>%
-  select(-xphsn, -xpmg, -rent, -rentg_bh, -hhyneti) %>%
+  dplyr::select(-xphsn, -xpmg, -rent, -rentg_bh, -hhyneti) %>%
   #Variable creation
   group_by(pidp) %>% 
   mutate(numobs = length(wave),
-         qfedhi = ifelse(qfedhi < 0, NA, qfedhi)) %>% 
+         qfedhi = ifelse(qfedhi < 0, NA, qfedhi),
+         plbornc = ifelse(plbornc < 0, NA, plbornc)) %>% 
   fill(qfedhi, .direction = "downup") %>% 
+  fill(plbornc, .direction = "downup") %>% 
   ungroup() %>% 
   mutate(ratio = hc/hhinc,
          ratiodummy = ifelse(ratio < 0 | ratio > 1, 1, 0)) %>% 
@@ -84,18 +86,19 @@ bhps5 <- indhhbhps %>%
          partner = ifelse(mlstat == 2 | mlstat == 3, "married", "single"),
          partner = ifelse(spinhh == 1 & partner == "single", "cohab", partner),
          emp = ifelse(jbstat < 0, NA, ifelse(jbstat == 1 | jbstat == 2, "emp", ifelse(jbstat == 3, "unemp", ifelse(jbstat == 7, "student", "inactive")))), #employment control
-         ukborn = ifelse(plbornc == -8, 1, ifelse(plbornc > 0, 0, NA)),
+         ukborn = ifelse(is.na(plbornc), 1, 0),
          parenthh = ifelse(hgbiom > 0 | hgbiof > 0, 1, 0),
          hsroom = ifelse(hsroom < 0, NA, hsroom),
          lkmove = ifelse(lkmove < -1, NA, lkmove)) %>% 
   group_by(pidp) %>% 
   fill(partner, .direction = "downup") %>% 
   fill(emp, .direction = "downup") %>% 
-  fill(ukborn, .direction = "downup") %>% 
+  # fill(ukborn, .direction = "downup") %>% 
   ungroup() %>% 
-  select(-qfedhi, -mlstat, -spinhh, -jbstat, -plbornc, -hgbiom, -hgbiof) %>% 
+  dplyr::select(-qfedhi, -mlstat, -spinhh, -jbstat, -plbornc, -hgbiom, -hgbiof) %>% 
   rename("indinc" = "paynty")
 
+bhps5 %>% count(is.na(loctax))
   
 saveRDS(bhps5, file = "bhps5.rds")
 
@@ -103,8 +106,9 @@ saveRDS(bhps5, file = "bhps5.rds")
 # UKHLS -------------------------------------------------------------------
 ############################################################################
 
+
 ukhls5 <- indhhukhls %>% 
-  select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove,
+  dplyr::select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, ukborn, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove,
          fihhmnnet3_dv, gor_dv, qfhigh_dv, hiqual_dv, f_qfhighoth, marstat_dv, jbstat, plbornc, hgbiom, hgbiof, hgadoptm, hgadoptf,
          hhsize, plnowm, plnowy4, fimnnet_dv) %>% 
   mutate(rent2 = ifelse(rent < 0, NA, rent),
@@ -116,7 +120,7 @@ ukhls5 <- indhhukhls %>%
          hc = ifelse(is.na(rentgrs_dv) & hsownd != 1 & hsownd != 5 & hc == 0, NA, hc),
          survey = "ukhls") %>%
   rename("hhinc" = "fihhmnnet3_dv") %>%
-  select(-houscost1_dv, -rent, -rentgrs_dv, -rent2) %>%
+  dplyr::select(-houscost1_dv, -rent, -rentgrs_dv, -rent2) %>%
   mutate(year = wave + 1990,
          period = case_when(year >= 1991 & year <= 1999 ~ "1991-1999",
                             year >= 2000 & year <= 2007 ~ "2000-2007",
@@ -152,6 +156,7 @@ ukhls5 <- indhhukhls %>%
       qfhigh_dv == -8 ~"-8",
       qfhigh_dv == -9 ~"-9")) %>% 
     mutate(isced97 = ifelse(isced97 == 96 | isced97 <= 0, hiqual_edit, isced97)) %>% 
+    mutate(isced97 = ifelse(is.na(isced97), hiqual_edit, isced97)) %>% #HERE IS THE PROBLEM!!!!
     mutate(immedu = ifelse(f_qfhighoth >= 1 & f_qfhighoth <= 3, 6, ifelse(f_qfhighoth == 4, 5, ifelse(f_qfhighoth == 5 | f_qfhighoth == 6, 4, 
                                                                                                       ifelse(f_qfhighoth == 7 | f_qfhighoth == 8, 3, 
                                                                                                              ifelse(f_qfhighoth == 9, 2, ifelse(f_qfhighoth == 10, 1, NA))))))) %>%
@@ -167,7 +172,8 @@ ukhls5 <- indhhukhls %>%
            edu = ifelse(edu == "other", NA, edu)) %>% 
   mutate(partner = ifelse(marstat_dv == 1, "married", ifelse(marstat_dv == 2, "cohab", ifelse(marstat_dv < 0, NA, "single"))), #partnership control
          emp = ifelse(jbstat < 0, NA, ifelse(jbstat == 1 | jbstat == 2, "emp", ifelse(jbstat == 3, "unemp", ifelse(jbstat == 7, "student", "inactive")))), #employment control
-         ukborn = ifelse(plbornc == -8, 1, ifelse(plbornc > 0, 0, NA)), #ukborn control
+         ukborn = ifelse(ukborn == -9, NA, ukborn),
+         ukborn = ifelse(ukborn == 5, 0, 1), #ukborn control
          parenthh = ifelse(hgbiom > 0 | hgadoptm > 0 | hgbiof > 0 | hgadoptf > 0, 1, 0),
          hsroom = hsrooms + hsbeds, #This mirrors the BHPS variable "hsroom" which is not divided like the UKHLS
          hsroom = ifelse(hsroom < 0, NA, hsroom),
@@ -178,8 +184,9 @@ ukhls5 <- indhhukhls %>%
   fill(ukborn, .direction = "downup") %>% 
   ungroup() %>% 
   rename("indinc" = "fimnnet_dv") %>% 
-  select(-qfhigh_dv, -hiqual_dv, -f_qfhighoth, -hiqual_edit, -immedu, -edu_cat, -marstat_dv, -jbstat, -plbornc, -hgbiom, -hgbiof, -hgadoptm, -hgadoptf, -hsrooms, -hsbeds)
-  
+  dplyr::select(-qfhigh_dv, -hiqual_dv, -f_qfhighoth, -hiqual_edit, -immedu, -edu_cat, -marstat_dv, -jbstat, -plbornc, -hgbiom, -hgbiof, -hgadoptm, -hgadoptf, -hsrooms, -hsbeds)
+
+
 saveRDS(ukhls5, file = "ukhls5.rds")
 
 
@@ -203,7 +210,7 @@ saveRDS(ukhls5, file = "ukhls5.rds")
 ############################################################################
 
 allfert_cut <- allfert %>% 
-  select(pidp, wave, kdob, bno) %>% 
+  dplyr::select(pidp, wave, kdob, bno) %>% 
   group_by(pidp) %>% 
   mutate(totchild = length(pidp)) %>% 
   filter(bno <= 3, !is.na(kdob)) #I lose about 6000 higher parity births (exclusively from UKHLS)
@@ -236,7 +243,7 @@ realobsnum <- cball %>%
   mutate(obsnum = row_number(),
          totobs = length(wave)) %>% 
   ungroup() %>% 
-  select(pidp, wave, obsnum, totobs)
+  dplyr::select(pidp, wave, obsnum, totobs)
 
 #This df fixes several issues:
 # 1. it creates an observation number for each interview (note births before first interview and births that occur between interview periods don't count)
@@ -274,7 +281,7 @@ cball0 <- cball %>%
   mutate(parity = ifelse(is.na(parity), bno + 1, parity)) %>% 
   ungroup() %>% 
   filter(par3filter == 0, par3before == 0) %>% 
-  select(-par3filter, -par3before, -parnum, -wave1year, -before, -missingdummy) %>%
+  dplyr::select(-par3filter, -par3before, -parnum, -wave1year, -before, -missingdummy) %>%
   mutate(year = as.numeric(year),
          birthy = as.numeric(birthy),
          age_dv = ifelse(is.na(age_dv), year - birthy, age_dv),
@@ -324,9 +331,9 @@ filterna <- cball1 %>% filter(is.na(clock))
 filterna %>% count(diffwave)
 ##!Make this df for the next step
 filterna1 <- filterna %>% 
-  select(pidp, wave, diffwave) %>% 
+  dplyr::select(pidp, wave, diffwave) %>% 
   mutate(nakeep = ifelse(diffwave == -1 | diffwave == -2 | diffwave == 0, 1, 0)) %>% 
-  select(-diffwave)
+  dplyr::select(-diffwave)
 
 #Testing for NA
 test2 <- cball1 %>% filter(event == 1, is.na(istrtdaty))
@@ -372,6 +379,8 @@ cball2 <- cball1 %>%
   filter(!is.na(sex)) %>% #43 observations sex is NA so they are removed
   rename("age" = "age_dv") %>% 
   mutate(oci = ifelse(hsroom <= hhsize, 1, 0), #oci is the overcrowding index
+         oci2 = ifelse(hsroom < hhsize, 1, 0), #sensitivity analysis for oci
+         oci3 = ifelse(hsroom < (hhsize - 1), 1, 0),
          indinc = ifelse(indinc < 0, 0, indinc),
          indshare = indinc/hhinc,
          indshare = ifelse(indshare > 1, 1, indshare),
@@ -395,8 +404,6 @@ cball2 <- cball1 %>%
                                                 "60-100")),
          tenure = ifelse(tenure_dv == -9, NA, ifelse(tenure_dv <=2, "owned", ifelse(tenure_dv == 3 | tenure_dv == 4, "social", "rent"))))
 
-# check <- cball2 %>% count(parenthh, age)
-
 saveRDS(cball2, file = "cball2.rds")
 
 # Checking to make sure my filters worked correctly (make cball2 without the filters to see the power of the filters)
@@ -416,6 +423,15 @@ check <- cball2 %>%  #There is 2 obs with clock as NA still
 #Conclusion the filters remove 16.3% of total observations
 summary(cball2$indshare)
 
+#Descriptive of oci to see if the ratios match ONS numbers
+#https://www.ons.gov.uk/peoplepopulationandcommunity/housing/articles/adminbasedlevelsofovercrowdingusingthebedroomstandardandvaluationofficeagencynumberofbedroomsfeasibilityresearchenglandandwales/january2021
+# It appears that oci2 most accurately mirrors observed over crowding from the 2011 census
+cball2 %>% count(oci, oci2, oci3)
+cball2 %>% count(tenure)
+cball2 %>% count(oci, tenure)
+cball2 %>% count(oci2, tenure)
+cball2 %>% count(oci3, tenure)
+
 #Finally, let's see if my main analysis seems to make sense
 clockparitycheck <- cball2 %>% count(clock, event, parity)
 #As you would assume, the number of 2&3 children are more relative to 1 children at small numbers but that relationship changes as the number grows
@@ -428,7 +444,7 @@ clockparitycheck <- cball2 %>% count(clock, event, parity)
 
 cballlad <- cball2 %>% 
   left_join(., lad_values, by = c("hidp", "wave")) %>% 
-  select(-year.y) %>% 
+  dplyr::select(-year.y) %>% 
   rename("year" = "year.x") %>% 
   group_by(pidp) %>% 
   fill(code, .direction = "updown") %>% 
@@ -442,7 +458,7 @@ saveRDS(cballlad, file = "cballlad.rds")
 # 
 # 
 # oci <- cballlad %>% 
-#   select(pidp, wave, hhsize, hsroom, edu) %>% 
+#   dplyr::select(pidp, wave, hhsize, hsroom, edu) %>% 
 #   group_by(pidp) %>% 
 #   fill(hsroom, .direction = "downup") %>% 
 #   fill(hhsize, .direction = "downup") %>% 

@@ -119,14 +119,14 @@ sd(obsp3$obs)
 
 #This uses hhpart3! Separated by parity
 mycontrols <- tableby.control(test = FALSE)
-hhpart3stats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + emp + share + oci, 
+hhpart3stats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + emp + share + oci2, 
                                 data = hhpart3, 
                                 weights = weight,
                                 control = mycontrols)
 labels(hhpart3stats) <-  c(parity = "Parity", event = "Event", clock = "Exposure", age = "Age",
                          ratio = "Ratio of Housing to Income", ratio_cat2 = "Ratio of Housing to Income (Cat.)", period = "Period",
                          tenure = "Housing type", partner = "Partnership status", edu = "Educational attainment", ukborn = "UK Born",
-                         emp = "Activity status", share = "Household income share", oci = "Overcrowding Index")
+                         emp = "Activity status", share = "Household income share", oci2 = "Overcrowding Index")
 summary(hhpart3stats)
 write2html(hhpart3stats, "hhpart3stats_parity_10-10-2022.html") #UPDATE DATE
 write2word(hhpart3stats, "hhpart3stats_parity_10-10-2022.docx") #UPDATE DATE

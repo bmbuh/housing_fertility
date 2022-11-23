@@ -209,6 +209,7 @@ summary(cballlad$hhinc)
 summary(ladimp2$hhinc) #last observation forward keeps the summary statistics close to the stats with NA (308 NA remaining)
 summary(cballlad$hc)
 summary(ladimp2$hc) #last observation forward keeps the summary statistics close to the stats with NA (617 NA remaining)
+summary(ladimp2$oci2)
 ladimp2 %>% count(is.na(hsroom))
 ladimp2 %>% count(is.na(tenure))
 
@@ -292,8 +293,10 @@ hcfert <- ladimp2 %>%
                             age >= 35 & age <= 39 ~ "25-39",
                             age >= 40 & age <= 45 ~ "40-45"))
 
+
 saveRDS(hcfert, file = "hcfert.rds")
 str(hcfert)
+
 
 hcfert %>% count(ownout)
 
@@ -376,7 +379,8 @@ partner <-
 # Step 3: combine the df
 hhpart <- hh %>% 
   left_join(., partner, by = c("hidp", "wave")) %>% 
-  mutate(pidp = as.numeric(pidp))
+  mutate(pidp = as.numeric(pidp),
+         oci2 = as.character(oci2))
 
 saveRDS(hhpart, file = "hhpart.rds")
 

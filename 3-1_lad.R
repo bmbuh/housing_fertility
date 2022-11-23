@@ -137,29 +137,29 @@ saveRDS(lad, file = "lad.rds")
 ###########################################################################
 
 #England and Wales
-engwal_lad <- read.csv("S:/papers/paper_2_housing_costs/lad_housing_prices/engwal_lowerquartile_edit.csv")
+engwal_lad <- read_csv("S:/papers/paper_2_housing_costs/lad_housing_prices/engwal_lowerquartile_edit.csv")
 
 engwal_lad_long <- engwal_lad %>% 
   pivot_longer(cols = c("end1995", "end1996", "end1997", "end1998", "end1999", "end2000", "end2001", "end2002", "end2003", "end2004",
                "end2005", "end2006", "end2007", "end2008", "end2009", "end2010", "end2011", "end2012", "end2013", "end2014",
                "end2015", "end2016", "end2017", "end2018", "end2019", "end2020", "end2021"), names_to = "year", values_to = "lowquar") %>%
   separate(year, into = c("end", "year"), sep = 3, convert = TRUE) %>%
-  select(-end) %>%
-  rename("code" = "Local.authority.code") %>%
-  rename("name" = "Local.authority.name")
+  dplyr::select(-end)
+  # rename("code" = "Local.authority.code") %>%
+  # rename("name" = "Local.authority.name")
 
 #Scotland
-scot_lad <- read.csv("S:/papers/paper_2_housing_costs/lad_housing_prices/scot_lowerquartile_edit.csv")
+scot_lad <- read_csv("S:/papers/paper_2_housing_costs/lad_housing_prices/scot_lowerquartile_edit.csv")
 
 scot_lad_long <- scot_lad %>% 
   pivot_longer(cols = c("end1993", "end1994", "end1995", "end1996", "end1997", "end1998", "end1999", "end2000", "end2001", "end2002", "end2003",
                         "end2004", "end2005", "end2006", "end2007", "end2008", "end2009", "end2010", "end2011", "end2012", "end2013", "end2014",
                         "end2015", "end2016", "end2017", "end2018"), names_to = "year", values_to = "lowquar") %>%
   separate(year, into = c("end", "year"), sep = 3, convert = TRUE) %>%
-  select(-end)
+  dplyr::select(-end)
 
 #Northern Ireland
-ni_lad <- read.csv("S:/papers/paper_2_housing_costs/lad_housing_prices/ni_lowerquartile_edit.csv")
+ni_lad <- read_csv("S:/papers/paper_2_housing_costs/lad_housing_prices/ni_lowerquartile_edit.csv")
 
 
 #Join into 1 file
@@ -167,15 +167,17 @@ lad_values <- left_join(lad, engwal_lad_long, by = c("code", "year")) %>%
   left_join(., scot_lad_long, by = c("code", "year")) %>%
   mutate(lowquar.x = ifelse(is.na(lowquar.x), lowquar.y, lowquar.x)) %>% #this is necessary because of the double names when joining (Scotland)
   mutate(name.x = ifelse(is.na(name.x), name.y, name.x)) %>%
-  select(-name.y, -lowquar.y) %>%
+  dplyr::select(-name.y, -lowquar.y) %>%
   rename("name" = "name.x") %>%
   rename("lowquar" = "lowquar.x") %>%
   left_join(., ni_lad, by = c("code", "year")) %>%
   mutate(lowquar.x = ifelse(is.na(lowquar.x), lowquar.y, lowquar.x)) %>% #this is necessary because of the double names when joining (NI)
   mutate(name.x = ifelse(is.na(name.x), name.y, name.x)) %>%
-  select(-name.y, -lowquar.y) %>%
+  dplyr::select(-name.y, -lowquar.y) %>%
   rename("name" = "name.x") %>%
   rename("lowquar" = "lowquar.x")
+
+summary(lad_values$lowquar)
 
 saveRDS(lad_values, file = "lad_values.rds")
 

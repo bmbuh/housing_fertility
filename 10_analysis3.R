@@ -1174,3 +1174,106 @@ mbp_cat_parity3_output <- modelsummary(mbp_cat_parity3, output = "huxtable", sta
 # quick_docx(mbp_cat_parity3, file = "mbp3_cat_AME_S10_24-10-2022.docx", open = FALSE)
 quick_xlsx(mbp_cat_parity3_output, file = "mbp3_cat_AME_S10_24-10-2022.xlsx", open = FALSE)
 
+
+
+############################################################################
+# Worrisome Test ----------------------------------------------------------
+############################################################################
+
+
+b10p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure
+              + (1|pidp) + (1|code),
+              data = hhpart3p1,
+              family = binomial,
+              control = glmerControl(optimizer = "bobyqa",
+                                     optCtrl = list(maxfun = 2e5)),
+              weights = weight) 
+
+summary(b10p1)
+summ(b10p1, exp = TRUE)
+saveRDS(b10p1,"b10p1.rds")
+mb10p1 <- margins(b10p1)
+summary(mb10p1)
+saveRDS(mb10p1,"mb10p1.rds")
+
+
+b11p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp 
+               + (1|pidp) + (1|code),
+              data = hhpart3p1,
+              family = binomial,
+              control = glmerControl(optimizer = "bobyqa",
+                                     optCtrl = list(maxfun = 2e5)),
+              weights = weight) 
+
+summary(b11p1)
+summ(b11p1, exp = TRUE)
+saveRDS(b11p1,"b11p1.rds")
+mb11p1 <- margins(b11p1)
+saveRDS(mb11p1,"mb11p1.rds")
+
+
+b12p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
+               + (1|pidp) + (1|code),
+              data = hhpart3p1,
+              family = binomial,
+              control = glmerControl(optimizer = "bobyqa",
+                                     optCtrl = list(maxfun = 2e5)),
+              weights = weight) 
+
+summary(b12p1)
+summ(b12p1, exp = TRUE)
+saveRDS(b12p1,"b12p1.rds")
+mb12p1 <- margins(b12p1)
+saveRDS(mb12p1,"mb12p1.rds")
+
+#Testing the 3level model
+#Parity 1
+mbp_output_parity1_3level <- list(mb10p1, mb11p1, mb12p1)
+cm_cont_par <- c("clock" = "Clock",
+                 "ratio" = "Ratio of Housing Costs to Household Income",
+                 "tenurerent" = "Private Rent",
+                 "tenuresocial" = "Social Housing",
+                 "empunemp" = "Unemployed",
+                 "empinactive" = "Inactive",
+                 "empstudent" = "Student",
+                 "oci" = "Overcrowding Index",
+                 "oci2" = "Overcrowding Index 2",
+                 "shareequal" = "Equal",
+                 "sharefb" = "Femalebreadwinner",
+                 "period2000-2007" = "2000-2007",
+                 "period2008-2012" = "2008-2012",
+                 "period2013-2021" = "2013-2021",
+                 "age_cat25-28" = "25-28",
+                 "age_cat30-34" = "30-34",
+                 "age_cat25-39" = "35-39",
+                 "age_cat40-45" = "40-45",
+                 "agesq" = "Age Squared",
+                 "edulow" = "Low",
+                 "edumedium" = "Medium",
+                 "ukborn1" = "UK Born")
+modelsummary(mbp_output_parity1_3level, coef_map = cm_cont_par, output = "mbp_output_p1cont_3level_AME_s10_23-11-2022.html", stars = TRUE)
+mbp_cont_parity1_3level <- modelsummary(mbp_output_parity1_3level, output = "huxtable", stars = TRUE)
+# quick_docx(mbp_cont_parity1, file = "mbp_output_p1cont_3level_AME_s10_23-11-2022.docx", open = FALSE)
+quick_xlsx(mbp_cont_parity1, file = "mbp_output_p1cont_3level_AME_s10_23-11-2022.xlsx", open = FALSE)
+
+
+
+#Testing oci2
+b13p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
+               + (1|pidp) + (1|code),
+               data = hhpart3p1,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5)),
+               weights = weight) 
+
+summary(b13p1)
+summ(b13p1, exp = TRUE)
+saveRDS(b13p1,"b13p1.rds")
+mb13p1 <- margins(b13p1)
+saveRDS(mb13p1,"mb13p1.rds")
+
+#Continous
+#Parity 1
+mbp_output_parity1_ocitest <- list(mb12p1, mb13p1)
+modelsummary(mbp_output_parity1_ocitest, coef_map = cm_cont_par, output = "mbp_output_p1cont_ocitest_AME_s10_23-11-2022.html", stars = TRUE)

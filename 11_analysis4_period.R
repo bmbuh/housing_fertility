@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 21.11.2022
-#Last Updated:
+#Last Updated: 28.11.2022
 
 ## This script examines periods individually to look at possible changes
 ### The conclusion from this script is that the pattern observed in script 10 are consistent when stratifying by period
@@ -112,7 +112,7 @@ hhpart3pl20 <- hhpart3 %>% filter(period == "2013-2021")
 
 #Steps 1 and 2 on continuous variable
 c1p90 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p90,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -127,7 +127,7 @@ saveRDS(mc1p90,"mc1p90.rds")
 
 
 c2p90 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p90,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -142,7 +142,7 @@ saveRDS(mc2p90,"mc2p90.rds")
 
 
 c3p90 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure + emp 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p90,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -157,7 +157,7 @@ saveRDS(mc3p90,"mc3p90.rds")
 
 
 c4p90 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p90,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -173,7 +173,7 @@ saveRDS(mc4p90,"mc4p90.rds")
 
 # Parity Specific -------------------------------------------------------------
 
-c1p90p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + (1|code),
+c1p90p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + (1|pidp) + (1|code),
                   data = hhpart3p90p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -186,7 +186,7 @@ saveRDS(c1p90p1,"c4p90p1.rds")
 mc1p90p1 <- margins(c1p90p1)
 saveRDS(mc1p90p1,"mc1p90p1.rds")
 
-c2p90p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + (1|code),
+c2p90p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + (1|pidp) + (1|code),
                   data = hhpart3p90p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -199,7 +199,7 @@ saveRDS(c2p90p1,"c2p90p1.rds")
 mc2p90p1 <- margins(c2p90p1)
 saveRDS(mc2p90p1,"mc2p90p1.rds")
 
-c3p90p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp  + (1|code),
+c3p90p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp  + (1|pidp) + (1|code),
                   data = hhpart3p90p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -212,7 +212,7 @@ saveRDS(c3p90p1,"c3p90p1.rds")
 mc3p90p1 <- margins(c3p90p1)
 saveRDS(mc3p90p1,"mc3p90p1.rds")
 
-c4p90p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4p90p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                data = hhpart3p90p1,
                family = binomial,
                control = glmerControl(optimizer = "bobyqa",
@@ -225,7 +225,7 @@ saveRDS(c4p90p1,"c4p90p1.rds")
 mc4p90p1 <- margins(c4p90p1)
 saveRDS(mc4p90p1,"mc4p90p1.rds")
 
-c4p90p2 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4p90p2 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                  data = hhpart3p90p2,
                  family = binomial,
                  control = glmerControl(optimizer = "bobyqa",
@@ -238,7 +238,7 @@ saveRDS(c4p90p2,"c4p90p2.rds")
 mc4p90p2 <- margins(c4p90p2)
 saveRDS(mc4p90p2,"mc4p90p2.rds")
 
-c4p90p3 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4p90p3 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                  data = hhpart3p90p3,
                  family = binomial,
                  control = glmerControl(optimizer = "bobyqa",
@@ -258,7 +258,7 @@ saveRDS(mc4p90p3,"mc4p90p3.rds")
 # -------------------------------------------------------------------------
 
 c1pe20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn 
-               + (1|code),
+               + (1|pidp) + (1|code),
                data = hhpart3pe20,
                family = binomial,
                control = glmerControl(optimizer = "bobyqa",
@@ -273,7 +273,7 @@ saveRDS(mc1pe20,"mc1pe20.rds")
 
 
 c2pe20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure
-               + (1|code),
+               + (1|pidp) + (1|code),
                data = hhpart3pe20,
                family = binomial,
                control = glmerControl(optimizer = "bobyqa",
@@ -288,7 +288,7 @@ saveRDS(mc2pe20,"mc2pe20.rds")
 
 
 c3pe20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure + emp 
-               + (1|code),
+               + (1|pidp) + (1|code),
                data = hhpart3pe20,
                family = binomial,
                control = glmerControl(optimizer = "bobyqa",
@@ -303,7 +303,7 @@ saveRDS(mc3pe20,"mc3pe20.rds")
 
 
 c4pe20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-               + (1|code),
+               + (1|pidp) + (1|code),
                data = hhpart3pe20,
                family = binomial,
                control = glmerControl(optimizer = "bobyqa",
@@ -319,7 +319,7 @@ saveRDS(mc4pe20,"mc4pe20.rds")
 
 # Parity Specific -------------------------------------------------------------
 
-c1pe20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + (1|code),
+c1pe20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + (1|pidp) + (1|code),
                   data = hhpart3pe20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -332,7 +332,7 @@ saveRDS(c1pe20p1,"c4pe20p1.rds")
 mc1pe20p1 <- margins(c1pe20p1)
 saveRDS(mc1pe20p1,"mc1pe20p1.rds")
 
-c2pe20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + (1|code),
+c2pe20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + (1|pidp) + (1|code),
                   data = hhpart3pe20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -345,7 +345,7 @@ saveRDS(c2pe20p1,"c2pe20p1.rds")
 mc2pe20p1 <- margins(c2pe20p1)
 saveRDS(mc2pe20p1,"mc2pe20p1.rds")
 
-c3pe20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp  + (1|code),
+c3pe20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp  + (1|pidp) + (1|code),
                   data = hhpart3pe20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -358,7 +358,7 @@ saveRDS(c3pe20p1,"c3pe20p1.rds")
 mc3pe20p1 <- margins(c3pe20p1)
 saveRDS(mc3pe20p1,"mc3pe20p1.rds")
 
-c4pe20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4pe20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                  data = hhpart3pe20p1,
                  family = binomial,
                  control = glmerControl(optimizer = "bobyqa",
@@ -371,7 +371,7 @@ saveRDS(c4pe20p1,"c4pe20p1.rds")
 mc4pe20p1 <- margins(c4pe20p1)
 saveRDS(mc4pe20p1,"mc4pe20p1.rds")
 
-c4pe20p2 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4pe20p2 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                  data = hhpart3pe20p2,
                  family = binomial,
                  control = glmerControl(optimizer = "bobyqa",
@@ -384,7 +384,7 @@ saveRDS(c4pe20p2,"c4pe20p2.rds")
 mc4pe20p2 <- margins(c4pe20p2)
 saveRDS(mc4pe20p2,"mc4pe20p2.rds")
 
-c4pe20p3 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4pe20p3 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                  data = hhpart3pe20p3,
                  family = binomial,
                  control = glmerControl(optimizer = "bobyqa",
@@ -406,7 +406,7 @@ saveRDS(mc4pe20p3,"mc4pe20p3.rds")
 
 #Steps 1 and 2 on continuous variable
 c1pr20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn 
-                + (1|code),
+                + (1|pidp) + (1|code),
                 data = hhpart3pr20,
                 family = binomial,
                 control = glmerControl(optimizer = "bobyqa",
@@ -421,7 +421,7 @@ saveRDS(mc1pr20,"mc1pr20.rds")
 
 
 c2pr20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure
-                + (1|code),
+                + (1|pidp) + (1|code),
                 data = hhpart3pr20,
                 family = binomial,
                 control = glmerControl(optimizer = "bobyqa",
@@ -436,7 +436,7 @@ saveRDS(mc2pr20,"mc2pr20.rds")
 
 
 c3pr20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure + emp 
-                + (1|code),
+                + (1|pidp) + (1|code),
                 data = hhpart3pr20,
                 family = binomial,
                 control = glmerControl(optimizer = "bobyqa",
@@ -451,7 +451,7 @@ saveRDS(mc3pr20,"mc3pr20.rds")
 
 
 c4pr20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-                + (1|code),
+                + (1|pidp) + (1|code),
                 data = hhpart3pr20,
                 family = binomial,
                 control = glmerControl(optimizer = "bobyqa",
@@ -467,7 +467,7 @@ saveRDS(mc4pr20,"mc4pr20.rds")
 
 # Parity Specific -------------------------------------------------------------
 
-c1pr20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + (1|code),
+c1pr20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + (1|pidp) + (1|code),
                   data = hhpart3pr20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -480,7 +480,7 @@ saveRDS(c1pr20p1,"c4pr20p1.rds")
 mc1pr20p1 <- margins(c1pr20p1)
 saveRDS(mc1pr20p1,"mc1pr20p1.rds")
 
-c2pr20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + (1|code),
+c2pr20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + (1|pidp) + (1|code),
                   data = hhpart3pr20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -493,7 +493,7 @@ saveRDS(c2pr20p1,"c2pr20p1.rds")
 mc2pr20p1 <- margins(c2pr20p1)
 saveRDS(mc2pr20p1,"mc2pr20p1.rds")
 
-c3pr20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp  + (1|code),
+c3pr20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp  + (1|pidp) + (1|code),
                   data = hhpart3pr20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -506,7 +506,7 @@ saveRDS(c3pr20p1,"c3pr20p1.rds")
 mc3pr20p1 <- margins(c3pr20p1)
 saveRDS(mc3pr20p1,"mc3pr20p1.rds")
 
-c4pr20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4pr20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                   data = hhpart3pr20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -519,7 +519,7 @@ saveRDS(c4pr20p1,"c4pr20p1.rds")
 mc4pr20p1 <- margins(c4pr20p1)
 saveRDS(mc4pr20p1,"mc4pr20p1.rds")
 
-c4pr20p2 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4pr20p2 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                   data = hhpart3pr20p2,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -532,7 +532,7 @@ saveRDS(c4pr20p2,"c4pr20p2.rds")
 mc4pr20p2 <- margins(c4pr20p2)
 saveRDS(mc4pr20p2,"mc4pr20p2.rds")
 
-c4pr20p3 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4pr20p3 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                   data = hhpart3pr20p3,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -553,7 +553,7 @@ saveRDS(mc4pr20p3,"mc4pr20p3.rds")
 
 #Steps 1 and 2 on continuous variable
 c1pl20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn 
-                + (1|code),
+                + (1|pidp) + (1|code),
                 data = hhpart3pl20,
                 family = binomial,
                 control = glmerControl(optimizer = "bobyqa",
@@ -568,7 +568,7 @@ saveRDS(mc1pl20,"mc1pl20.rds")
 
 
 c2pl20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure
-                + (1|code),
+                + (1|pidp) + (1|code),
                 data = hhpart3pl20,
                 family = binomial,
                 control = glmerControl(optimizer = "bobyqa",
@@ -583,7 +583,7 @@ saveRDS(mc2pl20,"mc2pl20.rds")
 
 
 c3pl20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure + emp 
-                + (1|code),
+                + (1|pidp) + (1|code),
                 data = hhpart3pl20,
                 family = binomial,
                 control = glmerControl(optimizer = "bobyqa",
@@ -598,7 +598,7 @@ saveRDS(mc3pl20,"mc3pl20.rds")
 
 
 c4pl20 <- glmer(formula = event ~ clock*parity + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-                + (1|code),
+                + (1|pidp) + (1|code),
                 data = hhpart3pl20,
                 family = binomial,
                 control = glmerControl(optimizer = "bobyqa",
@@ -614,7 +614,7 @@ saveRDS(mc4pl20,"mc4pl20.rds")
 
 # Parity Specific -------------------------------------------------------------
 
-c1pl20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + (1|code),
+c1pl20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + (1|pidp) + (1|code),
                   data = hhpart3pl20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -627,7 +627,7 @@ saveRDS(c1pl20p1,"c4pl20p1.rds")
 mc1pl20p1 <- margins(c1pl20p1)
 saveRDS(mc1pl20p1,"mc1pl20p1.rds")
 
-c2pl20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + (1|code),
+c2pl20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + (1|pidp) + (1|code),
                   data = hhpart3pl20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -640,7 +640,7 @@ saveRDS(c2pl20p1,"c2pl20p1.rds")
 mc2pl20p1 <- margins(c2pl20p1)
 saveRDS(mc2pl20p1,"mc2pl20p1.rds")
 
-c3pl20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp  + (1|code),
+c3pl20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp  + (1|pidp) + (1|code),
                   data = hhpart3pl20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -653,7 +653,7 @@ saveRDS(c3pl20p1,"c3pl20p1.rds")
 mc3pl20p1 <- margins(c3pl20p1)
 saveRDS(mc3pl20p1,"mc3pl20p1.rds")
 
-c4pl20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4pl20p1 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                   data = hhpart3pl20p1,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -666,7 +666,7 @@ saveRDS(c4pl20p1,"c4pl20p1.rds")
 mc4pl20p1 <- margins(c4pl20p1)
 saveRDS(mc4pl20p1,"mc4pl20p1.rds")
 
-c4pl20p2 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4pl20p2 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                   data = hhpart3pl20p2,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -679,7 +679,7 @@ saveRDS(c4pl20p2,"c4pl20p2.rds")
 mc4pl20p2 <- margins(c4pl20p2)
 saveRDS(mc4pl20p2,"mc4pl20p2.rds")
 
-c4pl20p3 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+c4pl20p3 <- glmer(formula = event ~ clock + ratio + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|pidp) + (1|code),
                   data = hhpart3pl20p3,
                   family = binomial,
                   control = glmerControl(optimizer = "bobyqa",
@@ -720,29 +720,29 @@ cm_cont_per <- c("clock" = "Clock",
                      "ukborn1" = "UK Born")
 
 mc1_output_allperiod <- list(mc1p90, mc1pe20, mc1pr20, mc1pl20)
-modelsummary(mc1_output_allperiod, coef_map = cm_cont_per, output = "mc1_output_allperiod_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mc1_output_allperiod, coef_map = cm_cont_per, output = "mc1_output_allperiod_AME_s11_28-11-2022.html", stars = TRUE)
 
 mc2_output_allperiod <- list(mc2p90, mc2pe20, mc2pr20, mc2pl20)
-modelsummary(mc2_output_allperiod, coef_map = cm_cont_per, output = "mc2_output_allperiod_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mc2_output_allperiod, coef_map = cm_cont_per, output = "mc2_output_allperiod_AME_s11_28-11-2022.html", stars = TRUE)
 
 mc3_output_allperiod <- list(mc3p90, mc3pe20, mc3pr20, mc3pl20)
-modelsummary(mc3_output_allperiod, coef_map = cm_cont_per, output = "mc3_output_allperiod_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mc3_output_allperiod, coef_map = cm_cont_per, output = "mc3_output_allperiod_AME_s11_28-11-2022.html", stars = TRUE)
 
 mc4_output_allperiod <- list(mc4p90, mc4pe20, mc4pr20, mc4pl20)
-modelsummary(mc4_output_allperiod, coef_map = cm_cont_per, output = "mc4_output_allperiod_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mc4_output_allperiod, coef_map = cm_cont_per, output = "mc4_output_allperiod_AME_s11_28-11-2022.html", stars = TRUE)
 
 
 mcp90_output_p90 <- list(mc1p90, mc2p90, mc3p90, mc4p90)
-modelsummary(mcp90_output_p90, coef_map = cm_cont_per, output = "mcp90_output_p90_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcp90_output_p90, coef_map = cm_cont_per, output = "mcp90_output_p90_AME_s11_28-11-2022.html", stars = TRUE)
 
 mcpe20_output_pe20 <- list(mc1pe20, mc2pe20, mc3pe20, mc4pe20)
-modelsummary(mcpe20_output_pe20, coef_map = cm_cont_per, output = "mcpe20_output_pe20_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcpe20_output_pe20, coef_map = cm_cont_per, output = "mcpe20_output_pe20_AME_s11_28-11-2022.html", stars = TRUE)
 
 mcpr20_output_pr20 <- list(mc1pr20, mc2pr20, mc3pr20, mc4pr20)
-modelsummary(mcpr20_output_pr20, coef_map = cm_cont_per, output = "mcpr20_output_pr20_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcpr20_output_pr20, coef_map = cm_cont_per, output = "mcpr20_output_pr20_AME_s11_28-11-2022.html", stars = TRUE)
 
 mcpl20_output_pl20 <- list(mc1pl20, mc2pl20, mc3pl20, mc4pl20)
-modelsummary(mcpl20_output_pl20, coef_map = cm_cont_per, output = "mcpl20_output_pl20_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcpl20_output_pl20, coef_map = cm_cont_per, output = "mcpl20_output_pl20_AME_s11_28-11-2022.html", stars = TRUE)
 
 
 
@@ -767,41 +767,41 @@ cm_cont_par_per <- c("clock" = "Clock",
                  "edulow" = "Low",
                  "edumedium" = "Medium",
                  "ukborn1" = "UK Born")
-modelsummary(mcp_output_period_parity1, coef_map = cm_cont_par_per, output = "mcp_output_period_p1cont_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcp_output_period_parity1, coef_map = cm_cont_par_per, output = "mcp_output_period_p1cont_AME_s11_28-11-2022.html", stars = TRUE)
 mcp_cont_period_parity1 <- modelsummary(mcp_output_period_parity1, output = "huxtable", stars = TRUE)
-# quick_docx(mcp_cont_period_parity1, file = "mcp_output_period_p1cont_AME_s11_21-11-2022.docx", open = FALSE)
-quick_xlsx(mcp_cont_period_parity1, file = "mcp_output_period_p1cont_AME_s11_21-11-2022.xlsx", open = FALSE)
+# quick_docx(mcp_cont_period_parity1, file = "mcp_output_period_p1cont_AME_s11_28-11-2022.docx", open = FALSE)
+quick_xlsx(mcp_cont_period_parity1, file = "mcp_output_period_p1cont_AME_s11_28-11-2022.xlsx", open = FALSE)
 
 #Parity 2
 mcp_output_period_parity2 <- list(mc4p90p2, mc4pe20p2, mc4pr20p2, mc4pl20p2)
-modelsummary(mcp_output_period_parity2, coef_map = cm_cont_par_per, output = "mcp_output_period_p2cont_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcp_output_period_parity2, coef_map = cm_cont_par_per, output = "mcp_output_period_p2cont_AME_s11_28-11-2022.html", stars = TRUE)
 mcp_cont_period_parity2 <- modelsummary(mcp_output_period_parity2, output = "huxtable", stars = TRUE)
-# quick_docx(mcp_cont_period_parity2, file = "mcp_output_period_p2cont_AME_s11_21-11-2022.docx", open = FALSE)
-quick_xlsx(mcp_cont_period_parity2, file = "mcp_output_period_p2cont_AME_s11_21-11-2022.xlsx", open = FALSE)
+# quick_docx(mcp_cont_period_parity2, file = "mcp_output_period_p2cont_AME_s11_28-11-2022.docx", open = FALSE)
+quick_xlsx(mcp_cont_period_parity2, file = "mcp_output_period_p2cont_AME_s11_28-11-2022.xlsx", open = FALSE)
 
 #Parity 3
 mcp_output_period_parity3 <- list(mc4p90p3, mc4pe20p3, mc4pr20p3, mc4pl20p3)
-modelsummary(mcp_output_period_parity3, coef_map = cm_cont_par_per, output = "mcp_output_period_p3cont_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcp_output_period_parity3, coef_map = cm_cont_par_per, output = "mcp_output_period_p3cont_AME_s11_28-11-2022.html", stars = TRUE)
 mcp_cont_period_parity3 <- modelsummary(mcp_output_period_parity3, output = "huxtable", stars = TRUE)
-# quick_docx(mcp_cont_period_parity3, file = "mcp_output_period_p3cont_AME_s11_21-11-2022.docx", open = FALSE)
-quick_xlsx(mcp_cont_period_parity3, file = "mcp_output_period_p3cont_AME_s11_21-11-2022.xlsx", open = FALSE)
+# quick_docx(mcp_cont_period_parity3, file = "mcp_output_period_p3cont_AME_s11_28-11-2022.docx", open = FALSE)
+quick_xlsx(mcp_cont_period_parity3, file = "mcp_output_period_p3cont_AME_s11_28-11-2022.xlsx", open = FALSE)
 
 ## Only Parity 1
 
 #p90
 mcp_output_p90_parity1 <- list(mc1p90p1, mc2p90p1, mc3p90p1, mc4p90p1)
-modelsummary(mcp_output_p90_parity1, coef_map = cm_cont_par_per, output = "mcp_output_p90_p1cont_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcp_output_p90_parity1, coef_map = cm_cont_par_per, output = "mcp_output_p90_p1cont_AME_s11_28-11-2022.html", stars = TRUE)
 
 #pe20
 mcp_output_pe20_parity1 <- list(mc1pe20p1, mc2pe20p1, mc3pe20p1, mc4pe20p1)
-modelsummary(mcp_output_pe20_parity1, coef_map = cm_cont_par_per, output = "mcp_output_pe20_p1cont_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcp_output_pe20_parity1, coef_map = cm_cont_par_per, output = "mcp_output_pe20_p1cont_AME_s11_28-11-2022.html", stars = TRUE)
 
 #pr20
 mcp_output_pr20_parity1 <- list(mc1pr20p1, mc2pr20p1, mc3pr20p1, mc4pr20p1)
-modelsummary(mcp_output_pr20_parity1, coef_map = cm_cont_par_per, output = "mcp_output_pr20_p1cont_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcp_output_pr20_parity1, coef_map = cm_cont_par_per, output = "mcp_output_pr20_p1cont_AME_s11_28-11-2022.html", stars = TRUE)
 
 #pl20
 mcp_output_pl20_parity1 <- list(mc1pl20p1, mc2pl20p1, mc3pl20p1, mc4pl20p1)
-modelsummary(mcp_output_pl20_parity1, coef_map = cm_cont_par_per, output = "mcp_output_pl20_p1cont_AME_s11_21-11-2022.html", stars = TRUE)
+modelsummary(mcp_output_pl20_parity1, coef_map = cm_cont_par_per, output = "mcp_output_pl20_p1cont_AME_s11_28-11-2022.html", stars = TRUE)
 
 

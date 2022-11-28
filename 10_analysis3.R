@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 17.10.2022
-#Last Updated: 24.10.2022
+#Last Updated: 28.11.2022
 
 ## This script is final models used in the paper
 
@@ -119,7 +119,7 @@ cat_plot(b0, pred = period, modx = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
          main.title = "Step 0: Examining period",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
@@ -140,7 +140,7 @@ cat_plot(b0, pred = period, modx = ratio_cat2, mod2 = parity,
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
          main.title = "Step 0: Examining period",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
@@ -178,7 +178,7 @@ cat_plot(b1, pred = parity, modx = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
          main.title = "Step 1: Raw Effect",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
@@ -215,7 +215,7 @@ cat_plot(b2, pred = parity, modx = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
          main.title = "Step 2: + Housing Tenure",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
@@ -251,7 +251,7 @@ cat_plot(b3, pred = parity, modx = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
          main.title = "Step 3: + Activity Status",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
@@ -287,7 +287,7 @@ cat_plot(b4, pred = parity, modx = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
          main.title = "Step 4: + Overcrowding Index",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
@@ -323,7 +323,7 @@ cat_plot(b5, pred = parity, modx = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
          main.title = "Step 5: + Household Income Share",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
@@ -464,12 +464,18 @@ modelsummary(b_output_cont,  output = "b_output_cont.html", stars = TRUE, expone
 # quick_docx(b_output_cont, file = "b_output_cont_AME_S10_21-07-2022.docx", open = FALSE)
 # quick_xlsx(b_output_cont, file = "b_output_cont_AME_S10_21-07-2022.xlsx", open = FALSE)
 
+
+
+
+
+
+
 ###########################################################################
 # parity specific analysis ------------------------------------------------
 ###########################################################################
 
 b0p1 <- glmer(formula = event ~ clock + ratio*period + age_cat + agesq + edu + ukborn + tenure + emp 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -487,7 +493,7 @@ saveRDS(mb0p1,"mb0p1.rds")
 # -------------------------------------------------------------------------
 
 b1p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp 
-               + (1|code),
+               + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -501,8 +507,8 @@ mb1p1 <- margins(b1p1)
 saveRDS(mb1p1,"mb1p1.rds")
 
 
-b2p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-               + (1|code),
+b2p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
+               + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -517,7 +523,7 @@ saveRDS(mb2p1,"mb2p1.rds")
 
 
 b3p1 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure + emp 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -541,17 +547,17 @@ cat_plot(b3p1, pred = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live First Birth)",
          main.title = "Parity 1, no OCI",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("b3p1_parity1_no_oci_S10_20_10-2022.png", dpi = 300)
+ggsave("b3p1_parity1_no_oci_S10_28-11-2022.png", dpi = 300)
 
 
-b4p1 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-              + (1|code),
+b4p1 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
+              + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -576,31 +582,31 @@ cat_plot(b4p1, pred = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live First Birth)",
          main.title = "Parity 1, with OCI",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("b4p1_parity1_no_oci_S10_20_10-2022.png", dpi = 300)
+ggsave("b4p1_parity1_with_oci_S10_28-11-2022.png", dpi = 300)
 
 
 
 #How much does OCI impact the likelihood to have the first child if we don't factor in housing costs?
-ocitest<- glmer(formula = event ~ clock + age_cat + agesq + edu + ukborn + tenure + emp + oci + (1|code),
+ocitest<- glmer(formula = event ~ clock + age_cat + agesq + edu + ukborn + tenure + emp + oci2 + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
                                      optCtrl = list(maxfun = 2e5)),
               weights = weight) 
-summary(ocitest)
-mocitest <- margins(ocitest)
-summary(mocitest)
+summary(oci2test)
+moci2test <- margins(oci2test)
+summary(moci2test)
 #Results - the OCI increases from 0.05*** to 0.08*** which is a marginal increase (when adding controls, this goes back down to 0.04***)
 
 #Steps 1 and 2 on continuous variable
 b5p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -615,7 +621,7 @@ saveRDS(mb5p1,"mb5p1.rds")
 
 
 b6p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -630,7 +636,7 @@ saveRDS(mb6p1,"mb6p1.rds")
 
 #Steps 1 and 2 on categorical variable
 b7p1 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -645,7 +651,7 @@ saveRDS(mb7p1,"mb7p1.rds")
 
 
 b8p1 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -663,7 +669,7 @@ saveRDS(mb8p1,"mb8p1.rds")
 # -------------------------------------------------------------------------
 
 b0p2 <- glmer(formula = event ~ clock + ratio*period + age_cat + agesq + edu + ukborn + tenure + emp 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p2,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -677,7 +683,7 @@ mb0p2 <- margins(b0p2)
 saveRDS(mb0p2,"mb0p2.rds")
 
 b1p2 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp 
-               + (1|code),
+               + (1|pidp) + (1|code),
               data = hhpart3p2,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -692,8 +698,8 @@ saveRDS(mb1p2,"mb1p2.rds")
 
 
 
-b2p2 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-               + (1|code),
+b2p2 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
+               + (1|pidp) + (1|code),
               data = hhpart3p2,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -707,7 +713,7 @@ mb2p2 <- margins(b2p2)
 saveRDS(mb2p2,"mb2p2.rds")
 
 b3p2 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure + emp 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p2,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -732,17 +738,17 @@ cat_plot(b3p2, pred = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Second Birth)",
          main.title = "Parity 2, no OCI",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("b3p2_parity1_no_oci_S10_20_10-2022.png", dpi = 300)
+ggsave("b3p2_parity1_no_oci_S10_28-11-2022.png", dpi = 300)
 
 
-b4p2 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-              + (1|code),
+b4p2 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
+              + (1|pidp) + (1|code),
               data = hhpart3p2,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -768,17 +774,17 @@ cat_plot(b4p2, pred = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Second Birth)",
          main.title = "Parity 2, with OCI",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("b4p2_parity1_no_oci_S10_20_10-2022.png", dpi = 300)
+ggsave("b4p2_parity1_no_oci_S10_28-11-2022.png", dpi = 300)
 
 #Steps 1 and 2 on continuous variable
 b5p2 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p2,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -793,7 +799,7 @@ saveRDS(mb5p2,"mb5p2.rds")
 
 
 b6p2 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p2,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -808,7 +814,7 @@ saveRDS(mb6p2,"mb6p2.rds")
 
 #Steps 1 and 2 on categorical variable
 b7p2 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p2,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -823,7 +829,7 @@ saveRDS(mb7p2,"mb7p2.rds")
 
 
 b8p2 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p2,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -841,7 +847,7 @@ saveRDS(mb8p2,"mb8p2.rds")
 # -------------------------------------------------------------------------
 
 b0p3 <- glmer(formula = event ~ clock + ratio*period + age_cat + agesq + edu + ukborn + tenure + emp 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p3,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -855,7 +861,7 @@ mb0p3 <- margins(b0p3)
 saveRDS(mb0p3,"mb0p3.rds")
 
 b1p3 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp 
-               + (1|code),
+               + (1|pidp) + (1|code),
               data = hhpart3p3,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -870,8 +876,8 @@ saveRDS(mb1p3,"mb1p3.rds")
 
 
 
-b2p3 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-               + (1|code),
+b2p3 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
+               + (1|pidp) + (1|code),
               data = hhpart3p3,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -885,7 +891,7 @@ mb2p3 <- margins(b2p3)
 saveRDS(mb2p3,"mb2p3.rds")
 
 b3p3 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure + emp 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p3,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -909,17 +915,17 @@ cat_plot(b3p3, pred = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Third Birth)",
          main.title = "Parity 3, no OCI",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("b3p3_parity1_no_oci_S10_20_10-2022.png", dpi = 300)
+ggsave("b3p3_parity1_no_oci_S10_28-11-2022.png", dpi = 300)
 
 
-b4p3 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
-              + (1|code),
+b4p3 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
+              + (1|pidp) + (1|code),
               data = hhpart3p3,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -945,17 +951,17 @@ cat_plot(b4p3, pred = ratio_cat2,
          x.label = "",
          y.label = "Pr(Experencing a Live Third Birth)",
          main.title = "Parity 3, with OCI",
-         legend.main = "Household income used for housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("b4p3_parity1_no_oci_S10_30_10-2022.png", dpi = 300)
+ggsave("b4p3_parity1_no_oci_S10_28-11-2022.png", dpi = 300)
 
 #Steps 1 and 2 on continuous variable
 b5p3 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p3,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -970,7 +976,7 @@ saveRDS(mb5p3,"mb5p3.rds")
 
 
 b6p3 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p3,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -986,7 +992,7 @@ saveRDS(mb6p3,"mb6p3.rds")
 
 #Steps 1 and 2 on categorical variable
 b7p3 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn 
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p3,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -1001,7 +1007,7 @@ saveRDS(mb7p3,"mb7p3.rds")
 
 
 b8p3 <- glmer(formula = event ~ clock + ratio_cat2 + period + age_cat + agesq + edu + ukborn + tenure
-              + (1|code),
+              + (1|pidp) + (1|code),
               data = hhpart3p3,
               family = binomial,
               control = glmerControl(optimizer = "bobyqa",
@@ -1023,13 +1029,13 @@ mbp_output <- list(mb1p1, mb2p1, mb1p2, mb2p2, mb1p3, mb2p3)
 cm_cont <- c("clock" = "Clock",
             "parity2" = "Parity 2",
             "parity3" = "Parity 3",
-            "ratio" = "Ratio of Housing Costs to Household Income",
+            "ratio" = "Housing expenditure",
             "tenurerent" = "Private Rent",
             "tenuresocial" = "Social Housing",
             "empunemp" = "Unemployed",
             "empinactive" = "Inactive",
             "empstudent" = "Student",
-            "oci" = "Overcrowding Index",
+            "oci21" = "Overcrowding Index",
             "shareequal" = "Equal",
             "sharefb" = "Femalebreadwinner",
             "period2000-2007" = "2000-2007",
@@ -1043,10 +1049,10 @@ cm_cont <- c("clock" = "Clock",
             "edulow" = "Low",
             "edumedium" = "Medium",
             "ukborn1" = "UK Born")
-modelsummary(mbp_output, coef_map = cm_cont, output = "mbp_output_cont_AME_s10_21-10-2022.html", stars = TRUE)
-mbp_cont <- modelsummary(mbp_output, output = "huxtable", stars = TRUE)
-# quick_docx(mbp_cont, file = "mbp_cont_AME_S10_21-10-2022.docx", open = FALSE)
-quick_xlsx(mbp_cont, file = "mbp_cont_AME_S10_21-10-2022.xlsx", open = FALSE)
+modelsummary(mbp_output, coef_map = cm_cont, output = "mbp_output_cont_AME_s10_28-11-2022.html", stars = TRUE)
+# mbp_cont <- modelsummary(mbp_output, output = "huxtable", stars = TRUE)
+# quick_docx(mbp_cont, file = "mbp_cont_AME_S10_28-11-2022.docx", open = FALSE)
+# quick_xlsx(mbp_cont, file = "mbp_cont_AME_S10_28-11-2022.xlsx", open = FALSE)
 
 
 #Categorical
@@ -1064,7 +1070,7 @@ cm_cat <- c("clock" = "Clock",
              "empunemp" = "Unemployed",
              "empinactive" = "Inactive",
              "empstudent" = "Student",
-             "oci" = "Overcrowding Index",
+             "oci21" = "Overcrowding Index",
              "shareequal" = "Equal",
              "sharefb" = "Femalebreadwinner",
              "period2000-2007" = "2000-2007",
@@ -1078,22 +1084,22 @@ cm_cat <- c("clock" = "Clock",
              "edulow" = "Low",
              "edumedium" = "Medium",
              "ukborn1" = "UK Born")
-modelsummary(mbp_output_cat, coef_map = cm_cat, output = "mbp_output_cat_AME_s10_21-10-2022.html", stars = TRUE)
-mbp_cat <- modelsummary(mbp_output_cat, output = "huxtable", stars = TRUE)
-# quick_docx(mbp, file = "mbp_cat_AME_S10_19-10-2022.docx", open = FALSE)
-quick_xlsx(mbp, file = "mbp_cat_AME_S10_19-10-2022.xlsx", open = FALSE)
+modelsummary(mbp_output_cat, coef_map = cm_cat, output = "mbp_output_cat_AME_s10_28-11-2022.html", stars = TRUE)
+# mbp_cat <- modelsummary(mbp_output_cat, output = "huxtable", stars = TRUE)
+# quick_docx(mbp, file = "mbp_cat_AME_S10_28-11-2022.docx", open = FALSE)
+# quick_xlsx(mbp, file = "mbp_cat_AME_S10_28-11-2022.xlsx", open = FALSE)
 
 #Continous
 #Parity 1
 mbp_output_parity1 <- list(mb5p1, mb6p1, mb1p1, mb2p1)
 cm_cont_par <- c("clock" = "Clock",
-             "ratio" = "Ratio of Housing Costs to Household Income",
+             "ratio" = "Housing expenditure",
              "tenurerent" = "Private Rent",
              "tenuresocial" = "Social Housing",
              "empunemp" = "Unemployed",
              "empinactive" = "Inactive",
              "empstudent" = "Student",
-             "oci" = "Overcrowding Index",
+             "oci21" = "Overcrowding Index",
              "shareequal" = "Equal",
              "sharefb" = "Femalebreadwinner",
              "period2000-2007" = "2000-2007",
@@ -1107,24 +1113,24 @@ cm_cont_par <- c("clock" = "Clock",
              "edulow" = "Low",
              "edumedium" = "Medium",
              "ukborn1" = "UK Born")
-modelsummary(mbp_output_parity1, coef_map = cm_cont_par, output = "mbp_output_p1cont_AME_s10_21-10-2022.html", stars = TRUE)
+modelsummary(mbp_output_parity1, coef_map = cm_cont_par, output = "mbp_output_p1cont_AME_s10_28-11-2022.html", stars = TRUE)
 mbp_cont_parity1 <- modelsummary(mbp_output_parity1, output = "huxtable", stars = TRUE)
-# quick_docx(mbp_cont_parity1, file = "mbp1_cont_AME_S10_21-10-2022.docx", open = FALSE)
-quick_xlsx(mbp_cont_parity1, file = "mbp1_cont_AME_S10_21-10-2022.xlsx", open = FALSE)
+# quick_docx(mbp_cont_parity1, file = "mbp1_cont_AME_S10_28-11-2022.docx", open = FALSE)
+quick_xlsx(mbp_cont_parity1, file = "mbp1_cont_AME_S10_28-11-2022.xlsx", open = FALSE)
 
 #Parity 2
 mbp_output_parity2 <- list(mb5p2, mb6p2, mb1p2, mb2p2)
-modelsummary(mbp_output_parity2, coef_map = cm_cont_par, output = "mbp_output_p2cont_AME_s10_21-10-2022.html", stars = TRUE)
+modelsummary(mbp_output_parity2, coef_map = cm_cont_par, output = "mbp_output_p2cont_AME_s10_28-11-2022.html", stars = TRUE)
 mbp_cont_parity2 <- modelsummary(mbp_output_parity2, output = "huxtable", stars = TRUE)
-# quick_docx(mbp_cont_parity2, file = "mbp2_cont_AME_S10_21-10-2022.docx", open = FALSE)
-quick_xlsx(mbp_cont_parity2, file = "mbp2_cont_AME_S10_21-10-2022.xlsx", open = FALSE)
+# quick_docx(mbp_cont_parity2, file = "mbp2_cont_AME_S10_28-11-2022.docx", open = FALSE)
+quick_xlsx(mbp_cont_parity2, file = "mbp2_cont_AME_S10_28-11-2022.xlsx", open = FALSE)
 
 #Parity 3
 mbp_output_parity3 <- list(mb5p3, mb6p3, mb1p3, mb2p3)
-modelsummary(mbp_output_parity3, coef_map = cm_cont_par, output = "mbp_output_p3cont_AME_s10_21-10-2022.html", stars = TRUE)
+modelsummary(mbp_output_parity3, coef_map = cm_cont_par, output = "mbp_output_p3cont_AME_s10_28-11-2022.html", stars = TRUE)
 mbp_cont_parity3 <- modelsummary(mbp_output_parity3, output = "huxtable", stars = TRUE)
-# quick_docx(mbp_cont_parity3, file = "mbp3_cont_AME_S10_21-10-2022.docx", open = FALSE)
-quick_xlsx(mbp_cont_parity3, file = "mbp3_cont_AME_S10_21-10-2022.xlsx", open = FALSE)
+# quick_docx(mbp_cont_parity3, file = "mbp3_cont_AME_S10_28-11-2022.docx", open = FALSE)
+quick_xlsx(mbp_cont_parity3, file = "mbp3_cont_AME_S10_28-11-2022.xlsx", open = FALSE)
 
 
 #Categorical
@@ -1141,7 +1147,7 @@ cm_cat_par <- c("clock" = "Clock",
             "empunemp" = "Unemployed",
             "empinactive" = "Inactive",
             "empstudent" = "Student",
-            "oci" = "Overcrowding Index",
+            "oci21" = "Overcrowding Index",
             "shareequal" = "Equal",
             "sharefb" = "Femalebreadwinner",
             "period2000-2007" = "2000-2007",
@@ -1155,24 +1161,29 @@ cm_cat_par <- c("clock" = "Clock",
             "edulow" = "Low",
             "edumedium" = "Medium",
             "ukborn1" = "UK Born")
-modelsummary(mbp_output_parity1_cat, coef_map = cm_cat_par, output = "mbp_output_p1cat_AME_s10_24-10-2022.html", stars = TRUE)
+modelsummary(mbp_output_parity1_cat, coef_map = cm_cat_par, output = "mbp_output_p1cat_AME_s10_28-11-2022.html", stars = TRUE)
 mbp_cat_parity1 <- modelsummary(mbp_output_parity1_cat, output = "huxtable", stars = TRUE)
-# quick_docx(mbp_cat_parity1, file = "mbp1_cat_AME_S10_24-10-2022.docx", open = FALSE)
-quick_xlsx(mbp_cat_parity1, file = "mbp1_cat_AME_S10_24-10-2022.xlsx", open = FALSE)
+# quick_docx(mbp_cat_parity1, file = "mbp1_cat_AME_S10_28-11-2022.docx", open = FALSE)
+quick_xlsx(mbp_cat_parity1, file = "mbp1_cat_AME_S10_28-11-2022.xlsx", open = FALSE)
 
 #Parity 2
 mbp_cat_parity2 <- list(mb7p2, mb8p2, mb3p2, mb4p2)
-modelsummary(mbp_cat_parity2, coef_map = cm_cat_par, output = "mbp_output_p2cat_AME_s10_24-10-2022.html", stars = TRUE)
+modelsummary(mbp_cat_parity2, coef_map = cm_cat_par, output = "mbp_output_p2cat_AME_s10_28-11-2022.html", stars = TRUE)
 mbp_cat_parity2_output <- modelsummary(mbp_cat_parity2, output = "huxtable", stars = TRUE)
-# quick_docx(mbp_cat_parity2, file = "mbp2_cat_AME_S10_24-10-2022.docx", open = FALSE)
-quick_xlsx(mbp_cat_parity2_output, file = "mbp2_cat_AME_S10_24-10-2022.xlsx", open = FALSE)
+# quick_docx(mbp_cat_parity2, file = "mbp2_cat_AME_S10_28-11-2022.docx", open = FALSE)
+quick_xlsx(mbp_cat_parity2_output, file = "mbp2_cat_AME_S10_28-11-2022.xlsx", open = FALSE)
 
 #Parity 3
 mbp_cat_parity3 <- list(mb7p3, mb8p3, mb3p3, mb4p3)
-modelsummary(mbp_cat_parity3, coef_map = cm_cat_par, output = "mbp_output_p3cat_AME_s10_24-10-2022.html", stars = TRUE)
+modelsummary(mbp_cat_parity3, coef_map = cm_cat_par, output = "mbp_output_p3cat_AME_s10_28-11-2022.html", stars = TRUE)
 mbp_cat_parity3_output <- modelsummary(mbp_cat_parity3, output = "huxtable", stars = TRUE)
-# quick_docx(mbp_cat_parity3, file = "mbp3_cat_AME_S10_24-10-2022.docx", open = FALSE)
-quick_xlsx(mbp_cat_parity3_output, file = "mbp3_cat_AME_S10_24-10-2022.xlsx", open = FALSE)
+# quick_docx(mbp_cat_parity3, file = "mbp3_cat_AME_S10_28-11-2022.docx", open = FALSE)
+quick_xlsx(mbp_cat_parity3_output, file = "mbp3_cat_AME_S10_28-11-2022.xlsx", open = FALSE)
+
+
+
+
+
 
 
 
@@ -1212,7 +1223,7 @@ mb11p1 <- margins(b11p1)
 saveRDS(mb11p1,"mb11p1.rds")
 
 
-b12p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
+b12p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
                + (1|pidp) + (1|code),
               data = hhpart3p1,
               family = binomial,
@@ -1226,11 +1237,19 @@ saveRDS(b12p1,"b12p1.rds")
 mb12p1 <- margins(b12p1)
 saveRDS(mb12p1,"mb12p1.rds")
 
+
+
+
+###########################################################################
+# Testing 23-11-2022 ------------------------------------------------------
+###########################################################################
+
+
 #Testing the 3level model
 #Parity 1
 mbp_output_parity1_3level <- list(mb10p1, mb11p1, mb12p1)
 cm_cont_par <- c("clock" = "Clock",
-                 "ratio" = "Ratio of Housing Costs to Household Income",
+                 "ratio" = "Housing expenditure",
                  "tenurerent" = "Private Rent",
                  "tenuresocial" = "Social Housing",
                  "empunemp" = "Unemployed",

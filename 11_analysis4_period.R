@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 21.11.2022
-#Last Updated: 28.11.2022
+#Last Updated: 05.12.2022
 
 ## This script examines periods individually to look at possible changes
 ### The conclusion from this script is that the pattern observed in script 10 are consistent when stratifying by period

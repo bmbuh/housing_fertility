@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 17.10.2022
-#Last Updated: 28.11.2022
+#Last Updated: 07.12.2022
 
 ## This script is final models used in the paper
 
@@ -27,7 +27,8 @@ str(hhpart)
 
 # DF for individuals not living with no parents in the household
 hhpart2 <- hhpart %>% 
-  dplyr::filter(parenthh == 0)
+  dplyr::filter(parenthh == 0) %>% 
+  mutate(oci2 = as.numeric(oci2)) #needed for mediation
 
 # DF for individuals not living with no parents in the household AND co-residing with a partner
 hhpart3 <- hhpart2 %>% 
@@ -89,6 +90,12 @@ hhpart4 <- hhpart3 %>%
 # b6p3: parity 3, + housing tenure
 # b7p3: parity 1, raw effect - categorical
 # b8p3: parity 1, + housing tenure - categorical
+
+# Three-level parity specific testing
+# b10p1: all + tenure - threelevel
+# b11p1: + emp
+# b12p1: + oci2
+# b13p1: oci2 testing
 
 
 
@@ -214,14 +221,14 @@ cat_plot(b2, pred = parity, modx = ratio_cat2,
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
-         main.title = "Step 2: + Housing Tenure",
+         main.title = "",
          legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("b2_plus_tenure_S10_17_10-2022.png", dpi = 300)
+ggsave("b2_plus_tenure_S10_17_10-2022.png", dpi = 500)
 
 #analysis b3
 b3 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + period + age_cat + agesq + edu + ukborn + tenure + emp 
@@ -250,17 +257,17 @@ cat_plot(b3, pred = parity, modx = ratio_cat2,
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
-         main.title = "Step 3: + Activity Status",
+         main.title = "",
          legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("b3_plus_emp_S10_17_10-2022.png", dpi = 300)
+ggsave("b3_plus_emp_S10_17_10-2022.png", dpi = 500)
 
-#analysis b4
-b4 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
+#analysis b4 (update 30-11-2022)
+b4 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2
             + (1|pidp) + (1|code),
             data = hhpart3,
             family = binomial,
@@ -286,17 +293,17 @@ cat_plot(b4, pred = parity, modx = ratio_cat2,
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
-         main.title = "Step 4: + Overcrowding Index",
+         main.title = "",
          legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("b4_plus_oci_S10_17_10-2022.png", dpi = 300)
+ggsave("b4_plus_oci_S10_30-11-2022.png", dpi = 500)
 
 #analysis b5
-b5 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci + share 
+b5 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 + share 
             + (1|pidp) + (1|code),
             data = hhpart3,
             family = binomial,
@@ -347,7 +354,7 @@ cm_cat <- c("clock" = "Clock",
             "empunemp" = "Unemployed",
             "empinactive" = "Inactive",
             "empstudent" = "Student",
-            "oci" = "Overcrowding Index",
+            "oci21" = "Overcrowding Index",
             "shareequal" = "Equal",
             "sharefb" = "Femalebreadwinner",
             "period2000-2007" = "2000-2007",
@@ -371,7 +378,7 @@ modelsummary(b_output,  output = "b_output2.html", stars = TRUE, exponentiate = 
 
 
 #analysis b6: same analysis as b4 but with a releveled parity so that parity 2 is the reference
-b6 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
+b6 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
             + (1|pidp) + (1|code),
             data = hhpart4,
             family = binomial,
@@ -385,7 +392,7 @@ saveRDS(b6,"b6.rds")
 
 
 #analysis b7: b6 but using a continuous variable for ratio
-b7 <- glmer(formula = event ~ clock*parity + ratio*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
+b7 <- glmer(formula = event ~ clock*parity + ratio*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
             + (1|pidp) + (1|code),
             data = hhpart4,
             family = binomial,
@@ -444,7 +451,7 @@ summ(b10, exp = TRUE)
 saveRDS(b10,"b10.rds")
 
 #analysis b11
-b11 <- glmer(formula = event ~ clock*parity + ratio*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci 
+b11 <- glmer(formula = event ~ clock*parity + ratio*parity + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 
             + (1|pidp) + (1|code),
             data = hhpart3,
             family = binomial,
@@ -663,6 +670,267 @@ summ(b8p1, exp = TRUE)
 saveRDS(b8p1,"b8p1.rds")
 mb8p1 <- margins(b8p1)
 saveRDS(mb8p1,"mb8p1.rds")
+
+
+# -------------------------------------------------------------------------
+# Mediation: Available Space ----------------------------------------------
+# -------------------------------------------------------------------------
+
+#Parity 1:
+
+# Step 1: X -> Y (ratio -> event)
+medp1x <- glmer(formula = event ~ clock + ratio + period + tenure + age_cat + agesq + edu + ukborn + emp + (1|pidp),
+                data = hhpart3p1,
+                family = binomial,
+                weights = weight,
+                control = glmerControl(optimizer = "bobyqa",
+                                       optCtrl = list(maxfun = 2e5))) 
+summary(medp1x)
+summ(medp1x, exp = TRUE)
+saveRDS(medp1x,"medp1x.rds")
+medp1xm <- margins(medp1x)
+summary(medp1xm)
+saveRDS(medp1xm,"medp1xm.rds")
+
+
+
+# Step 2: X -> M (ratio -> oci)
+medp1m <- glmer(formula = oci2 ~ clock + ratio + period + tenure + agesq + edu + ukborn + emp + (1|pidp),
+                data = hhpart3p1,
+                family = binomial,
+                weights = weight,
+                control = glmerControl(optimizer = "bobyqa",
+                                       optCtrl = list(maxfun = 2e5))) 
+summary(medp1m)
+summ(medp1m, exp = TRUE)
+saveRDS(medp1m,"medp1m.rds")
+medp1mm <- margins(medp1m)
+summary(medp1mm)
+saveRDS(medp1mm,"medp1mm.rds")
+
+
+
+
+# Step 3: X -> M -> Y (ratio -> oci -> event)
+medp1y <- glmer(formula = event ~ clock + ratio + period + oci2 + tenure  + agesq + edu + ukborn  + emp + (1|pidp),
+                data = hhpart3p1,
+                family = binomial,
+                weights = weight,
+                control = glmerControl(optimizer = "bobyqa",
+                                       optCtrl = list(maxfun = 2e5))) 
+summary(medp1y)
+summ(medp1y, exp = TRUE)
+saveRDS(medp1y,"medp1y.rds")
+medp1ym <- margins(medp1y)
+summary(medp1ym)
+saveRDS(medp1ym,"medp1ym.rds")
+
+
+
+# Mediation Analysis
+medp1.result <- mediate(medp1m, medp1y, treat = "ratio", mediator = "oci2")
+summary(medp1.result)
+plot(medp1.result)
+saveRDS(medp1.result,"medp1.result.rds")
+
+# m1sens <- medsens(medp1.result, rho.by=.01, eps=.01, effect.type="both")
+# summary(m1sens)
+# plot(m1sens)
+
+
+
+# Testing with the LAD RE in place of the individual RE --------------------
+
+#Parity 1:
+
+# Step 1: X -> Y (ratio -> event)
+medp1x2 <- glmer(formula = event ~ clock + ratio + period + tenure + age_cat + agesq + edu + ukborn + emp + (1|code),
+                data = hhpart3p1,
+                family = binomial,
+                weights = weight,
+                control = glmerControl(optimizer = "bobyqa",
+                                       optCtrl = list(maxfun = 2e5))) 
+summary(medp1x2)
+summ(medp1x2, exp = TRUE)
+saveRDS(medp1x2,"medp1x2.rds")
+medp1x2m <- margins(medp1x2)
+summary(medp1x2m)
+saveRDS(medp1x2m,"medp1x2m.rds")
+
+
+# Step 2: X -> M (ratio -> oci)
+medp1m2 <- glmer(formula = oci2 ~ clock + ratio + period + tenure + agesq + edu + ukborn + emp + (1|code),
+                data = hhpart3p1,
+                family = binomial,
+                weights = weight,
+                control = glmerControl(optimizer = "bobyqa",
+                                       optCtrl = list(maxfun = 2e5))) 
+summary(medp1m2)
+summ(medp1m2, exp = TRUE)
+saveRDS(medp1m2,"medp1m2.rds")
+medp1m2m <- margins(medp1m2)
+summary(medp1m2m)
+saveRDS(medp1m2m,"medp1m2m.rds")
+
+
+# Step 3: X -> M -> Y (ratio -> oci -> event)
+medp1y2 <- glmer(formula = event ~ clock + ratio + period + oci2 + tenure  + agesq + edu + ukborn  + emp + (1|code),
+                data = hhpart3p1,
+                family = binomial,
+                weights = weight,
+                control = glmerControl(optimizer = "bobyqa",
+                                       optCtrl = list(maxfun = 2e5))) 
+summary(medp1y2)
+summ(medp1y2, exp = TRUE)
+saveRDS(medp1y2,"medp1y2.rds")
+medp1y2m <- margins(medp1y2)
+summary(medp1y2m)
+saveRDS(medp1y2m,"medp1y2m.rds")
+
+
+# Mediation Analysis
+medp1.result2 <- mediate(medp1m2, medp1y2, treat = "ratio", mediator = "oci2")
+summary(medp1.result2)
+plot(medp1.result2)
+saveRDS(medp1.result2,"medp1.result2.rds")
+
+
+# -------------------------------------------------------------------------
+# No RE Test --------------------------------------------------------------
+# -------------------------------------------------------------------------
+
+#Parity 1:
+# Step 1: X -> Y (ratio -> event)
+noretestx <- glm(formula = event ~ clock + ratio + period + tenure + age_cat + agesq + edu + ukborn + emp,
+                 data = hhpart3p1,
+                 family = binomial,
+                 weights = weight) 
+
+summary(noretestx)
+summ(noretestx, exp = TRUE)
+saveRDS(noretestx,"noretestx.rds")
+noretestxm <- margins(noretestx)
+summary(noretestxm)
+saveRDS(noretestxm,"noretestxm.rds")
+
+# Step 2: X -> M (ratio -> oci)
+noretestm <- glm(formula = oci2 ~ clock + ratio + period + tenure + age_cat + agesq + edu + ukborn + emp,
+                 data = hhpart3p1,
+                 family = binomial,
+                 weights = weight) 
+
+summary(noretestm)
+summ(noretestm, exp = TRUE)
+saveRDS(noretestm,"noretestm.rds")
+noretestmm <- margins(noretestm)
+summary(noretestmm)
+saveRDS(noretestmm,"noretestmm.rds")
+
+
+# Step 3: X -> M -> Y (ratio -> oci -> event)
+noretesty <- glm(formula = event ~ clock + ratio + period + oci2 + tenure  + age_cat + agesq + edu + ukborn  + emp,
+                 data = hhpart3p1,
+                 family = binomial,
+                 weights = weight) 
+
+summary(noretesty)
+summ(noretesty, exp = TRUE)
+saveRDS(noretesty,"noretesty.rds")
+noretestym <- margins(noretesty)
+summary(noretestym)
+saveRDS(noretestym,"noretestym.rds")
+
+
+# Mediation Analysis
+noretest.result <- mediate(noretestm, noretesty, treat = "ratio", mediator = "oci2")
+summary(noretest.result)
+plot(noretest.result)
+saveRDS(noretest.result,"noretest.result.rds")
+
+
+
+
+
+#Parity 2:
+# Step 1: X -> Y (ratio -> event)
+noretestx2 <- glm(formula = event ~ clock + ratio + period + tenure + age_cat + agesq + edu + ukborn + emp,
+                 data = hhpart3p2,
+                 family = binomial,
+                 weights = weight) 
+
+summary(noretestx2)
+summ(noretestx2, exp = TRUE)
+saveRDS(noretestx2,"noretestx2.rds")
+noretestxm2 <- margins(noretestx2)
+summary(noretestxm2)
+saveRDS(noretestxm2,"noretestxm2.rds")
+
+# Step 2: X -> M (ratio -> oci)
+noretestm2 <- glm(formula = oci2 ~ clock + ratio + period + tenure + age_cat +  agesq + edu + ukborn + emp,
+                 data = hhpart3p2,
+                 family = binomial,
+                 weights = weight) 
+
+summary(noretestm2)
+summ(noretestm2, exp = TRUE)
+saveRDS(noretestm2,"noretestm2.rds")
+noretestmm2 <- margins(noretestm2)
+summary(noretestmm2)
+saveRDS(noretestmm2,"noretestmm2.rds")
+
+
+# Step 3: X -> M -> Y (ratio -> oci -> event)
+noretesty2 <- glm(formula = event ~ clock + ratio + period + oci2 + tenure + age_cat + agesq + edu + ukborn + emp,
+                 data = hhpart3p2,
+                 family = binomial,
+                 weights = weight) 
+
+summary(noretesty2)
+summ(noretesty2, exp = TRUE)
+saveRDS(noretesty2,"noretesty2.rds")
+noretestym2 <- margins(noretesty2)
+summary(noretestym2)
+saveRDS(noretestym2,"noretestym2.rds")
+
+
+# Mediation Analysis
+noretest.result2 <- mediate(noretestm2, noretesty2, treat = "ratio", mediator = "oci2")
+summary(noretest.result2)
+plot(noretest.result2)
+saveRDS(noretest.result2,"noretest.result2.rds")
+
+
+# -------------------------------------------------------------------------
+# output ------------------------------------------------------------------
+# -------------------------------------------------------------------------
+
+
+medm_output <- list(noretestmm, noretestmm2)
+cm_cont_par <- c("clock" = "Clock",
+                 "ratio" = "Housing expenditure",
+                 "tenurerent" = "Private Rent",
+                 "tenuresocial" = "Social Housing",
+                 "empunemp" = "Unemployed",
+                 "empinactive" = "Inactive",
+                 "empstudent" = "Student",
+                 "oci2" = "Overcrowding Index 2",
+                 "shareequal" = "Equal",
+                 "sharefb" = "Femalebreadwinner",
+                 "period2000-2007" = "2000-2007",
+                 "period2008-2012" = "2008-2012",
+                 "period2013-2021" = "2013-2021",
+                 "age_cat25-28" = "25-28",
+                 "age_cat30-34" = "30-34",
+                 "age_cat25-39" = "35-39",
+                 "age_cat40-45" = "40-45",
+                 "agesq" = "Age Squared",
+                 "edulow" = "Low",
+                 "edumedium" = "Medium",
+                 "ukborn1" = "UK Born")
+modelsummary(medm_output, coef_map = cm_cont_par, output = "medm_output_AME_s10_07-12-2022.html", stars = TRUE)
+medm_output2 <- modelsummary(medm_output, output = "huxtable", stars = TRUE)
+# quick_docx(medm_output2, file = "medm_output_AME_s10_07-12-2022.docx", open = FALSE)
+quick_xlsx(medm_output2, file = "medm_output_AME_s10_07-12-2022.xlsx", open = FALSE)
 
 # -------------------------------------------------------------------------
 # Parity 2 ----------------------------------------------------------------
@@ -1188,7 +1456,7 @@ quick_xlsx(mbp_cat_parity3_output, file = "mbp3_cat_AME_S10_28-11-2022.xlsx", op
 
 
 ############################################################################
-# Worrisome Test ----------------------------------------------------------
+# 3level Test ----------------------------------------------------------
 ############################################################################
 
 
@@ -1237,14 +1505,6 @@ saveRDS(b12p1,"b12p1.rds")
 mb12p1 <- margins(b12p1)
 saveRDS(mb12p1,"mb12p1.rds")
 
-
-
-
-###########################################################################
-# Testing 23-11-2022 ------------------------------------------------------
-###########################################################################
-
-
 #Testing the 3level model
 #Parity 1
 mbp_output_parity1_3level <- list(mb10p1, mb11p1, mb12p1)
@@ -1275,7 +1535,9 @@ mbp_cont_parity1_3level <- modelsummary(mbp_output_parity1_3level, output = "hux
 # quick_docx(mbp_cont_parity1, file = "mbp_output_p1cont_3level_AME_s10_23-11-2022.docx", open = FALSE)
 quick_xlsx(mbp_cont_parity1, file = "mbp_output_p1cont_3level_AME_s10_23-11-2022.xlsx", open = FALSE)
 
-
+###########################################################################
+# OCI Testing -------------------------------------------------------------
+###########################################################################
 
 #Testing oci2
 b13p1 <- glmer(formula = event ~ clock + ratio + period + age_cat + agesq + edu + ukborn + tenure + emp + oci2 

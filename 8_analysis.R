@@ -119,7 +119,7 @@ sd(obsp3$obs)
 
 #This uses hhpart3! Separated by parity
 mycontrols <- tableby.control(test = FALSE)
-hhpart3stats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + emp + share + oci2, 
+hhpart3stats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + hhemp + share + oci2, 
                                 data = hhpart3, 
                                 weights = weight,
                                 control = mycontrols)

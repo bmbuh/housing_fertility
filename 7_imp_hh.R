@@ -85,7 +85,7 @@ ladimp <- cballlad %>%
          -kdob, -bno, -totchild, -kyear, -obsnum, -totobs, -kyear2, -lagwave, -leadwave,
          -wavegap, -diffwave, -nakeep, -clockneg, -clockpos, -naevent, -largediff, -clock2,
          -name, -lowquar, -oci, -indshare, #remove oci and indshare here and recreate after imputation
-         -plnowm, -plnowy4
+         -plnowm, -plnowy4, -urban
          ) %>% 
   mutate(paremp = ifelse(partner == "single", "single", paremp)) %>% 
   #change lkmove "I don't know" to NA
@@ -114,7 +114,7 @@ str(ladimp)
 
 #This removes the LAD which we add in later but don't want to compute now
 macro <- cballlad %>% 
-  dplyr::select(pidp, wave, name, lowquar, plnowm, plnowy4)
+  dplyr::select(pidp, wave, name, lowquar, plnowm, plnowy4, urban)
 
 
 #Summary statistics
@@ -258,7 +258,8 @@ check2 <- ladimp2 %>%
 # Make final df with imputed values ---------------------------------------
 # -------------------------------------------------------------------------
 
-hcfert <- ladimp2 %>% 
+
+ladimp3 <- ladimp2 %>% 
   left_join(., macro, by = c("pidp", "wave")) %>% 
   # filter(!is.na(tenure), !is.na(hsroom)) %>% 
   mutate(oci = ifelse(hsroom <= hhsize, 1, 0), #oci is the overcrowding index
@@ -329,11 +330,29 @@ hcfert <- ladimp2 %>%
                            emp == "student" & paremp == "inactive" ~ "bothunemp",
                            emp == "emp" & paremp == "unemp" | paremp == "student" | paremp == "inactive" ~ "egoemp"))
   
+ladimp3 %>% count(hhemp)
 
 
-# emp == "unemp" | emp == "student" | emp == "inactive" & paremp == "unemp" | paremp == "student" | paremp == "inactive" ~ "bothunemp",
-# emp == "student" & paremp == "unemp" | paremp == "student" | paremp == "inactive" ~ "bothunemp",
-# emp == "inactive" & paremp == "unemp" | paremp == "student" | paremp == "inactive" ~ "bothunemp",
+#Median yearly hh income
+medhhinc <- ladimp3 %>% 
+  group_by(wave) %>% 
+  summarise(medhhinc = median(hhinc))
+
+#Median low quartile housing price
+medlowquar <- ladimp3 %>% 
+  filter(!is.na(lowquar)) %>% 
+  group_by(wave) %>% 
+  summarise(medlowquar = median(lowquar))
+
+hcfert <- ladimp3 %>% 
+  left_join(., medhhinc, by = "wave") %>% 
+  left_join(., medlowquar, by = "wave") %>% 
+  mutate(medinc = ifelse(medhhinc >= hhinc, 1, 0),
+         medlowquar = ifelse(medlowquar >= lowquar, 1, NA))
+
+hcfert %>% count(!is.na(lowquar), medlowquar) #Just about 50% of the LAD observations are above the median
+hcfert %>% count(wave, medlowquar) #Just about 50% of the LAD observations are above the median
+
 
 saveRDS(hcfert, file = "hcfert.rds")
 str(hcfert)

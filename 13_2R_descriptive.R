@@ -1,8 +1,8 @@
 #Coded by: Brian Buh
 #Started on: 13.02.2023
-#Last Updated: 21.02.2023 (updated figures - removed "percentage")
+#Last Updated: 16.03.2023 (Start of Post-Colloquium Revision)
 
-## This script looks at the paper after the revision by MWD
+## This script looks at the paper after the revision by MWD and WiC Colloquium
 
 library(tidyverse)
 library(haven)
@@ -19,6 +19,7 @@ library(huxtable)
 library(openxlsx) #For printing huxtable outputs in xlsx
 library(mediation)
 library(janitor) #For tabyl
+library(arsenal)
 
 #Load data  hhpart (s7)
 hhpart <- file.choose()
@@ -68,11 +69,6 @@ hhemp <- hhpart3 %>%
 period <- hhpart3 %>% 
   group_by(period) %>% 
   summarise(mean(ratio), median(ratio))
-
-hhpart_ratio0 <- hhpart3 %>%
-  filter(ratio_cat2 == "0")
-
-hhpart_ratio0 %>% count(tenure, ownout)
 
 
 hhpart_count <- hhpart3 %>% 
@@ -161,6 +157,42 @@ hhpart3p1 %>% tabyl(hhemp) #bothemp = 73.8%, bothunemp = 4.1%, egoemp = 5.4%, eg
 hhpart3p2 %>% tabyl(hhemp) #bothemp = 66.0%, bothunemp = 4.6%, egoemp = 4.5%, egoinactive = 22.8%, egounemp 2.1%
 hhpart3p3 %>% tabyl(hhemp) #bothemp = 68.4%, bothunemp = 4.2%, egoemp = 4.9%, egoinactive = 21.0%, egounemp 2.0%
 
+
+
+# Who are the partnered households with parents?
+lwp <- hhpart %>% #lwp = livewithparents
+  dplyr::filter(partner != "single", parenthh == 1) #2230 individuals
+
+lwp2 <- lwp %>% 
+  distinct(pidp) #798 distinct households
+
+mycontrols <- tableby.control(test = FALSE)
+lwpstats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + hhemp + share + oci2, 
+                                data = lwp, 
+                                weights = weight,
+                                control = mycontrols)
+
+summary(lwpstats)
+write2html(lwpstats, "lwpstats_parity_16-03-2023.html") #UPDATE DATE
+write2word(lwpstats, "lwpstats_parity_16-03-2023.docx") #UPDATE DATE
+
+# Who are the households paying 0 per month?
+hhpart_ratio0 <- hhpart3 %>%
+  filter(ratio_cat2 == "0") %>%  #7436 observations [3882 after weighting]
+  mutate(ownout = as.character(ownout))
+ratio0 <- hhpart_ratio0 %>% distinct(pidp) #2421 distinct households
+
+hhpart_ratio0 %>% filter(ownout == 0) %>% tabyl(tenure)
+
+mycontrols <- tableby.control(test = FALSE)
+lwpstats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + hhemp + share + oci2 + ownout, 
+                            data = hhpart_ratio0, 
+                            weights = weight,
+                            control = mycontrols)
+
+summary(lwpstats)
+write2html(lwpstats, "hhpart_ratio0_16-03-2023.html") #UPDATE DATE
+write2word(lwpstats, "hhpart_ratio0_16-03-2023.docx") #UPDATE DATE
 
 # -------------------------------------------------------------------------
 # Sample Age Dstribution  --------------------------------------------------------

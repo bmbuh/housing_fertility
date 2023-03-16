@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 14.02.2023
-#Last Updated: 
+#Last Updated: 16.03.2023 (heterogeneity testing)
 
 ## This script looks at the paper after the revision by MWD
 
@@ -50,13 +50,28 @@ hhpart3p3 %>% tabyl(tenure) #owned = 77.5%, #rent = 9.1%, social = 13.4%
 hhpart4 <- hhpart3 %>% 
   dplyr::filter(parity != 3)
 
-# Heterogeneity testing df
 
+# Heterogeneity testing df
 ## Age
 u29 <- hhpart3 %>% filter(age_cat2 == "u29")
 o30 <- hhpart3 %>% filter(age_cat2 == "o30")
 
 ## Income
+umedinc <- hhpart3 %>% filter(medinc == 0)
+umedinc %>% count(event, parity, tenure, ratio_cat2)
+omedinc <- hhpart3 %>% filter(medinc == 1)
+omedinc %>% count(event, parity, tenure)
+
+#Urban/rural
+urban <- hhpart3 %>% filter(urban == 1)
+rural <- hhpart3 %>% filter(urban == 2)
+
+# High Price LAD
+highlad <- hhpart3 %>% filter(medlowquar == 1)
+
+# Housing crisis
+precrisis <- hhpart3 %>% filter(period == "1992-1999" | period == "2000-2007")
+postcrisis <- hhpart3 %>% filter(period == "2008-2012" | period == "2013-2022")
 
 
 ###########################################################################
@@ -85,16 +100,25 @@ o30 <- hhpart3 %>% filter(age_cat2 == "o30")
 ### p3e2 = ratio*hhemp
 
 
-# Heterogenity testing
+# Heterogeneity testing
 ## Age
+### e1u29 = e1 with observations equal to or under 29
+### e1o30 = e1 with observations over 30
 
 ## Income-level
+### e1umedinc = e1 with observations under yearly median hh income
+### e1omedinc = e1 with observations equal to or over yearly median hh income
 
 ## Urban/rural
+### e1urban = e1 with only urban observations
+### e1rural = e1 with only rural observations
 
 ## Top LAD
+### e1highlad = e1 with only LAD with housing above the median low quartile home price
 
-
+##Crisis
+### e1precrisis = e1 with only precrisis observations (aka BHPS)
+### e1postcrisis = e1 with only postcrisis observations (aka UKHLS)
 
 
 # -------------------------------------------------------------------------
@@ -124,7 +148,8 @@ cat_plot(e1, pred = parity, modx = ratio_cat2, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
          modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         mod2.labels = c("Owned", "Private Rent", "Social Rent"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -161,7 +186,9 @@ cat_plot(e2, pred = parity, modx = ratio_cat2, mod2 = hhemp,
          errorbar.width = 0.25,
          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
          modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         mod2.values = c("bothemp", "egoinactive", "egoemp", "bothunemp", "egounemp"),
+         mod2.labels = c("Both Employed", "Woman Inactive", "Woman Emp., Man Not", "Both Unemployed", "Woman Unemployed"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -385,7 +412,7 @@ cat_plot(p1e1, pred = tenure, modx = ratio_cat2,
          errorbar.width = 0.25,
          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
          modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         # pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         # pred.labels = c("First birth", "Second birth", "Third birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -421,7 +448,7 @@ cat_plot(p1e2, pred = hhemp, modx = ratio_cat2,
          errorbar.width = 0.25,
          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
          modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         # pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         # pred.labels = c("First birth", "Second birth", "Third birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -462,7 +489,7 @@ cat_plot(p2e1, pred = tenure, modx = ratio_cat2,
          errorbar.width = 0.25,
          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
          modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         # pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         # pred.labels = c("First birth", "Second birth", "Third birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -498,7 +525,7 @@ cat_plot(p2e2, pred = hhemp, modx = ratio_cat2,
          errorbar.width = 0.25,
          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
          modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         # pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         # pred.labels = c("First birth", "Second birth", "Third birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -540,7 +567,7 @@ cat_plot(p3e1, pred = tenure, modx = ratio_cat2,
          errorbar.width = 0.25,
          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
          modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         # pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         # pred.labels = c("First birth", "Second birth", "Third birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -576,7 +603,7 @@ cat_plot(p3e2, pred = hhemp, modx = ratio_cat2,
          errorbar.width = 0.25,
          modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
          modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         # pred.labels = c("Parity 1", "Parity 2",  "Parity 3"),
+         # pred.labels = c("First birth", "Second birth", "Third birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -625,3 +652,348 @@ parity_output <- list(p1e1, p1e2, p2e1, p2e2, p3e1, p3e2)
 #             "ukborn1" = "UK Born")
 parity <- modelsummary(parity_output, output = "huxtable", exponentiate = TRUE, stars = TRUE)
 quick_html(parity, file = "parity_S14_14-02-2023.html", open = FALSE)
+
+
+
+
+
+
+###########################################################################
+# Heterogeneity testing ---------------------------------------------------
+###########################################################################
+
+# -------------------------------------------------------------------------
+## Age --------------------------------------------------------------------
+# -------------------------------------------------------------------------
+
+### e1u29 = e1 with observations equal to or under 29
+#analysis e1u29
+e1u29 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+            + (1|pidp) + (1|code),
+            data = u29,
+            family = binomial,
+            control = glmerControl(optimizer = "bobyqa",
+                                   optCtrl = list(maxfun = 2e5)),
+            weights = weight) 
+
+summary(e1u29)
+summ(e1u29, exp = TRUE)
+saveRDS(e1u29,"e1u29.rds")
+me1u29 <- margins(e1u29)
+summary(me1u29)
+
+cat_plot(e1u29, pred = parity, modx = ratio_cat2, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Under 29 years old",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("e1u29_parity_tenure_S14_16-03-2023.png", dpi = 500)
+
+### e1o30 = e1 with observations over 30
+e1o30 <- glmer(formula = event ~ clock*parity + ratio_cat2*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+               + (1|pidp) + (1|code),
+               data = o30,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5)),
+               weights = weight) 
+
+summary(e1o30)
+summ(e1o30, exp = TRUE)
+saveRDS(e1o30,"e1o30.rds")
+me1o30 <- margins(e1o30)
+summary(me1o30)
+
+cat_plot(e1o30, pred = parity, modx = ratio_cat2, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Over 30 years old",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("e1o30_parity_tenure_S14_16-03-2023.png", dpi = 500)
+
+## Income-level
+### e1umedinc = e1 with observations under yearly median hh income
+e1umedinc <- glmer(formula = event ~ clock*parity + ratio*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp
+               + (1|pidp) + (1|code),
+               data = umedinc,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5)),
+               weights = weight)
+
+summary(e1umedinc)
+summ(e1umedinc, exp = TRUE)
+saveRDS(e1umedinc,"e1umedinc.rds")
+me1umedinc <- margins(e1umedinc)
+summary(me1umedinc)
+
+effect_plot(e1umedinc, pred = ratio, force.cat = TRUE)
+
+cat_plot(e1umedinc, pred = parity, modx = ratio, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         # modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         # modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Under the median income",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("e1umedinc_parity_tenure_S14_16-03-2023.png", dpi = 500)
+
+### e1omedinc = e1 with observations equal to or over yearly median hh income
+e1omedinc <- glmer(formula = event ~ clock*parity + ratio_cat2*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+               + (1|pidp) + (1|code),
+               data = omedinc,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5)),
+               weights = weight) 
+
+summary(e1omedinc)
+summ(e1omedinc, exp = TRUE)
+saveRDS(e1omedinc,"e1omedinc.rds")
+me1omedinc <- margins(e1omedinc)
+summary(me1omedinc)
+
+cat_plot(e1omedinc, pred = parity, modx = ratio_cat2, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Over the median income",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("e1omedinc_parity_tenure_S14_16-03-2023.png", dpi = 500)
+
+## Urban/rural
+### e1urban = e1 with only urban observations
+e1urban <- glmer(formula = event ~ clock*parity + ratio_cat2*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+               + (1|pidp) + (1|code),
+               data = urban,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5)),
+               weights = weight) 
+
+summary(e1urban)
+summ(e1urban, exp = TRUE)
+saveRDS(e1urban,"e1urban.rds")
+me1urban <- margins(e1urban)
+summary(me1urban)
+
+cat_plot(e1urban, pred = parity, modx = ratio_cat2, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Urban",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("e1urban_parity_tenure_S14_16-03-2023.png", dpi = 500)
+
+### e1rural = e1 with only rural observations
+e1rural <- glmer(formula = event ~ clock*parity + ratio_cat2*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+               + (1|pidp) + (1|code),
+               data = rural,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5)),
+               weights = weight) 
+
+summary(e1rural)
+summ(e1rural, exp = TRUE)
+saveRDS(e1rural,"e1rural.rds")
+me1rural <- margins(e1rural)
+summary(me1rural)
+
+cat_plot(e1rural, pred = parity, modx = ratio_cat2, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Rural",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("e1rural_parity_tenure_S14_16-03-2023.png", dpi = 500)
+
+
+## Top LAD
+### e1highlad = e1 with only LAD with housing above the median low quartile home price
+e1highlad <- glmer(formula = event ~ clock*parity + ratio_cat2*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+               + (1|pidp) + (1|code),
+               data = highlad,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5)),
+               weights = weight) 
+
+summary(e1highlad)
+summ(e1highlad, exp = TRUE)
+saveRDS(e1highlad,"e1highlad.rds")
+me1highlad <- margins(e1highlad)
+summary(me1highlad)
+
+cat_plot(e1highlad, pred = parity, modx = ratio_cat2, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Only LAD with housing prices over the median lower quartile",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("e1highlad_parity_tenure_S14_16-03-2023.png", dpi = 500)
+
+##Crisis
+### e1precrisis = e1 with only precrisis observations (aka BHPS)
+e1precrisis <- glmer(formula = event ~ clock*parity + ratio_cat2*parity*tenure + age_cat + agesq + edu + ukborn + hhemp 
+               + (1|pidp) + (1|code),
+               data = precrisis,
+               family = binomial,
+               control = glmerControl(optimizer = "bobyqa",
+                                      optCtrl = list(maxfun = 2e5)),
+               weights = weight) 
+
+summary(e1precrisis)
+summ(e1precrisis, exp = TRUE)
+saveRDS(e1precrisis,"e1precrisis.rds")
+me1precrisis <- margins(e1precrisis)
+summary(me1precrisis)
+
+cat_plot(e1precrisis, pred = parity, modx = ratio_cat2, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Precrisis",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("e1precrisis_parity_tenure_S14_16-03-2023.png", dpi = 500)
+
+### e1postcrisis = e1 with only postcrisis observations (aka UKHLS)
+e1postcrisis <- glmer(formula = event ~ clock*parity + ratio_cat2*parity*tenure + age_cat + agesq + edu + ukborn + hhemp 
+                     + (1|pidp) + (1|code),
+                     data = postcrisis,
+                     family = binomial,
+                     control = glmerControl(optimizer = "bobyqa",
+                                            optCtrl = list(maxfun = 2e5)),
+                     weights = weight) 
+
+summary(e1postcrisis)
+summ(e1postcrisis, exp = TRUE)
+saveRDS(e1postcrisis,"e1postcrisis.rds")
+me1postcrisis <- margins(e1postcrisis)
+summary(me1postcrisis)
+
+cat_plot(e1postcrisis, pred = parity, modx = ratio_cat2, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat2
+         modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth", "Third birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Post crisis",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C", "#0F282E")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("e1postcrisis_parity_tenure_S14_16-03-2023.png", dpi = 500)

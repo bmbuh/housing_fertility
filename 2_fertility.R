@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 02.06.2022
-#Last Updated: 13.06.2021
+#Last Updated: 13.02.2023 (add wave 12 - used code from obj_vs_subj)
 
 library(tidyverse)
 library(haven)
@@ -90,38 +90,256 @@ saveRDS(fertbhps, "fertbhps.rds")
 #   unite(mdob, c(mdobm, mdoby), sep = "-") %>% 
 #   mutate(mdob = parse_date_time(mdob, "my"))
 
+# #Using xwave data to catch all possible respondents
+# x_sample <- xwave %>% 
+#   dplyr::select(pidp, pid, hhorig, sex, birthm, birthy, anychild_dv) %>% 
+#   rename("doby" = "birthy") %>% 
+#   rename("dobm" = "birthm") %>% 
+#   unite(dob, c(dobm, doby), sep = "-") %>% 
+#   mutate(dob = parse_date_time(dob, "my"))
+# 
+# #The DF a_parent comes from the dataset Stata code from Alita Nandi
+# parent_sample <- a_parent %>% 
+#   filter(a_mnpid >0) %>% 
+#   rename("kpidp" = "pidp") %>% 
+#   rename("mpidp" = "a_mnpid") %>%
+#   rename("kbirthm" = "a_birthm") %>% 
+#   rename("kbirthy" = "a_birthy")
+# 
+# 
+# res_child <- a_natchild %>% 
+#   dplyr::select(pidp, pid, a_lchlv, a_lchdoby, a_lchdobm, a_childno) %>%
+#   filter(a_lchlv == 2) %>% 
+#   rename("mpidp" = "pidp") %>% 
+#   rename("kbirthm" = "a_lchdobm") %>% 
+#   rename("kbirthy" = "a_lchdoby") %>% 
+#   mutate(kbirthm = ifelse(kbirthm < 0, NA, kbirthm)) %>% 
+#   mutate(kbirthy = ifelse(kbirthy < 0, NA, kbirthy)) %>% 
+#   dplyr::select(-a_lchlv)
+# 
+# combined_child <-
+#   bind_rows(res_child, parent_sample) %>% 
+#   dplyr::select(mpidp, kbirthy, kbirthm, a_childno) %>% 
+#   mutate(wave = 1) %>% 
+#   mutate(fpidp = NA)
+# 
+# # -------------------------------------------------------------------------
+# # Building prospective fertility histories --------------------------------
+# # -------------------------------------------------------------------------
+# 
+# 
+# b_newchild <- b_child %>% 
+#   filter(b_ynew == 1) %>% 
+#   dplyr::select(pidp, pid, b_ynew, b_birthy, b_birthm, b_mnpid, b_fnpid) %>% 
+#   rename("fpidp" = "b_fnpid") %>% 
+#   rename("ynew" =  "b_ynew") %>% 
+#   rename("kbirthy" =  "b_birthy") %>% 
+#   rename("kbirthm" =  "b_birthm") %>% 
+#   rename("mpidp" =  "b_mnpid") %>% 
+#   mutate(wave = 2)
+# 
+# c_newchild <- c_child %>% 
+#   filter(c_ynew == 1) %>% 
+#   dplyr::select(pidp, pid, c_ynew, c_birthy, c_birthm, c_mnpid, c_fnpid) %>% 
+#   rename("fpidp" = "c_fnpid") %>%  
+#   rename("ynew" =  "c_ynew") %>% 
+#   rename("kbirthy" =  "c_birthy") %>% 
+#   rename("kbirthm" =  "c_birthm") %>% 
+#   rename("mpidp" =  "c_mnpid") %>% 
+#   mutate(wave = 3)
+# 
+# d_newchild <- d_child %>% 
+#   filter(d_ynew == 1) %>% 
+#   dplyr::select(pidp, pid, d_ynew, d_birthy, d_birthm, d_mnpid, d_fnpid) %>% 
+#   rename("fpidp" = "d_fnpid") %>% 
+#   rename("ynew" =  "d_ynew") %>% 
+#   rename("kbirthy" =  "d_birthy") %>% 
+#   rename("kbirthm" =  "d_birthm") %>% 
+#   rename("mpidp" =  "d_mnpid") %>% 
+#   mutate(wave = 4)
+# 
+# e_newchild <- e_child %>% 
+#   filter(e_ynew == 1) %>% 
+#   dplyr::select(pidp, pid, e_ynew, e_birthy, e_birthm, e_mnpid, e_fnpid) %>% 
+#   rename("fpidp" = "e_fnpid") %>%  
+#   rename("ynew" =  "e_ynew") %>% 
+#   rename("kbirthy" =  "e_birthy") %>% 
+#   rename("kbirthm" =  "e_birthm") %>% 
+#   rename("mpidp" =  "e_mnpid") %>% 
+#   mutate(wave = 5)
+# 
+# f_newchild <- f_child %>% 
+#   filter(f_ynew == 1) %>% 
+#   dplyr::select(pidp, pid, f_ynew, f_birthy, f_birthm, f_mnpid, f_fnpid) %>% 
+#   rename("fpidp" = "f_fnpid") %>%  
+#   rename("ynew" =  "f_ynew") %>% 
+#   rename("kbirthy" =  "f_birthy") %>% 
+#   rename("kbirthm" =  "f_birthm") %>% 
+#   rename("mpidp" =  "f_mnpid") %>% 
+#   mutate(wave = 6)
+# 
+# g_newchild <- g_child %>% 
+#   filter(g_ynew == 1) %>% 
+#   dplyr::select(pidp, pid, g_ynew, g_birthy, g_birthm, g_mnpid, g_fnpid) %>% 
+#   rename("fpidp" = "g_fnpid") %>%  
+#   rename("ynew" =  "g_ynew") %>% 
+#   rename("kbirthy" =  "g_birthy") %>% 
+#   rename("kbirthm" =  "g_birthm") %>% 
+#   rename("mpidp" =  "g_mnpid") %>% 
+#   mutate(wave = 7)
+# 
+# h_newchild <- h_child %>% 
+#   filter(h_ynew == 1) %>% 
+#   dplyr::select(pidp, pid, h_ynew, h_birthy, h_birthm, h_mnpid, h_fnpid) %>% 
+#   rename("fpidp" = "h_fnpid") %>% 
+#   rename("ynew" =  "h_ynew") %>% 
+#   rename("kbirthy" =  "h_birthy") %>% 
+#   rename("kbirthm" =  "h_birthm") %>% 
+#   rename("mpidp" =  "h_mnpid") %>% 
+#   mutate(wave = 8)
+# 
+# i_newchild <- i_child %>% 
+#   filter(i_ynew == 1) %>% 
+#   dplyr::select(pidp, pid, i_ynew, i_birthy, i_birthm, i_mnpid, i_fnpid) %>% 
+#   rename("fpidp" = "i_fnpid") %>% 
+#   rename("ynew" =  "i_ynew") %>% 
+#   rename("kbirthy" =  "i_birthy") %>% 
+#   rename("kbirthm" =  "i_birthm") %>% 
+#   rename("mpidp" =  "i_mnpid") %>% 
+#   mutate(wave = 9)
+# 
+# j_newchild <- j_child %>% 
+#   filter(j_ynew == 1) %>% 
+#   dplyr::select(pidp, pid, j_ynew, j_birthy, j_birthm, j_mnpid, j_fnpid) %>% 
+#   rename("fpidp" = "j_fnpid") %>% 
+#   rename("ynew" =  "j_ynew") %>% 
+#   rename("kbirthy" =  "j_birthy") %>% 
+#   rename("kbirthm" =  "j_birthm") %>% 
+#   rename("mpidp" =  "j_mnpid") %>% 
+#   mutate(wave = 10)
+# 
+# k_newchild <- k_child %>% 
+#   filter(k_ynew == 1) %>%  
+#   dplyr::select(pidp, pid, k_ynew, k_birthy, k_birthm, k_mnpid, k_fnpid) %>% 
+#   rename("fpidp" = "k_fnpid") %>% 
+#   rename("ynew" =  "k_ynew") %>% 
+#   rename("kbirthy" =  "k_birthy") %>% 
+#   rename("kbirthm" =  "k_birthm") %>% 
+#   rename("mpidp" =  "k_mnpid") %>% 
+#   mutate(wave = 11)
+# 
+# child <- 
+#   bind_rows(b_newchild, c_newchild) %>% 
+#   bind_rows(., d_newchild) %>% 
+#   bind_rows(., e_newchild) %>% 
+#   bind_rows(., f_newchild) %>% 
+#   bind_rows(., g_newchild) %>% 
+#   bind_rows(., h_newchild) %>% 
+#   bind_rows(., i_newchild) %>% 
+#   bind_rows(., j_newchild) %>% 
+#   bind_rows(., k_newchild) %>% 
+#   dplyr::select(-ynew, -pidp)
+# 
+# # -------------------------------------------------------------------------
+# # Combined fertility histories --------------------------------------------
+# # -------------------------------------------------------------------------
+# 
+# combined_child2 <- 
+#   bind_rows(combined_child, child) %>% 
+#   rename("pidp" = "mpidp") %>% 
+#   arrange(pidp, kbirthy)
+# 
+# fathers_child <- combined_child2 %>% 
+#   filter(fpidp > 0) %>% 
+#   dplyr::select(2:7) %>% 
+#   rename("pidp" = "fpidp")
+# 
+# combined_child3 <- 
+#   bind_rows(combined_child2, fathers_child)
+# 
+# combined_child4 <- 
+#   left_join(combined_child3, x_sample, by = "pidp") %>% 
+#   unite(kdob, c(kbirthm, kbirthy), sep = "-") %>% 
+#   mutate(kdob = parse_date_time(kdob, "my")) %>% 
+#   arrange(pidp, kdob) %>% 
+#   group_by(pidp) %>% 
+#   mutate(bno = row_number()) %>% 
+#   mutate(check = a_childno - bno) %>% 
+#   ungroup()
+# 
+# saveRDS(combined_child4, file = "fertukhls.rds")
+# fertukhls <- file.choose()
+# fertukhls <- readRDS(fertukhls)
+
+
 #Using xwave data to catch all possible respondents
 x_sample <- xwave %>% 
-  dplyr::select(pidp, pid, hhorig, sex, birthm, birthy, anychild_dv) %>% 
+  dplyr::select(pidp, hhorig, sex, birthm, birthy, anychild_dv) %>% 
   rename("doby" = "birthy") %>% 
   rename("dobm" = "birthm") %>% 
   unite(dob, c(dobm, doby), sep = "-") %>% 
   mutate(dob = parse_date_time(dob, "my"))
 
+a_parent %>% 
+  mutate(a_mnpid = ifelse(a_mnpid == -8, NA, a_mnpid),
+         a_fnpid = ifelse(a_fnpid == -8, NA, a_fnpid)) %>% 
+  count(is.na(a_mnpid), is.na(a_fnpid))
+
 #The DF a_parent comes from the dataset Stata code from Alita Nandi
 parent_sample <- a_parent %>% 
-  filter(a_mnpid >0) %>% 
+  mutate(a_mnpid = ifelse(a_mnpid == -8, NA, a_mnpid),
+         a_fnpid = ifelse(a_fnpid == -8, NA, a_fnpid)) %>% 
+  filter(!is.na(a_mnpid) | !is.na(a_fnpid)) %>% 
   rename("kpidp" = "pidp") %>% 
   rename("mpidp" = "a_mnpid") %>%
   rename("kbirthm" = "a_birthm") %>% 
-  rename("kbirthy" = "a_birthy")
+  rename("kbirthy" = "a_birthy") %>% 
+  rename("fpidp" = "a_fnpid") %>% 
+  rename("hidp" = "a_hidp")
 
+mothers <- parent_sample %>% 
+  select(mpidp, hidp, kbirthm, kbirthy) %>% 
+  rename("pidp" = "mpidp") %>% 
+  filter(!is.na(pidp)) %>% 
+  mutate(sex = 2)
 
-res_child <- a_natchild %>% 
-  dplyr::select(pidp, pid, a_lchlv, a_lchdoby, a_lchdobm, a_childno) %>%
+fathers <- parent_sample %>% 
+  select(fpidp, hidp, kbirthm, kbirthy) %>% 
+  rename("pidp" = "fpidp") %>% 
+  filter(!is.na(pidp))%>% 
+  mutate(sex = 1)
+
+res_child_w1 <- a_natchild %>% 
+  dplyr::select(pidp, a_lchlv, a_lchdoby, a_lchdobm, a_childno) %>%
+  left_join(., x_sample, by = c("pidp")) %>% 
   filter(a_lchlv == 2) %>% 
-  rename("mpidp" = "pidp") %>% 
   rename("kbirthm" = "a_lchdobm") %>% 
   rename("kbirthy" = "a_lchdoby") %>% 
+  rename("childno" = "a_childno") %>%
   mutate(kbirthm = ifelse(kbirthm < 0, NA, kbirthm)) %>% 
   mutate(kbirthy = ifelse(kbirthy < 0, NA, kbirthy)) %>% 
-  dplyr::select(-a_lchlv)
+  dplyr::select(-a_lchlv, -dob, -anychild_dv) %>% 
+  mutate(wave = 1)
+
+res_child_w6 <- f_natchild %>% 
+  dplyr::select(pidp, f_lchlv, f_lchdoby, f_lchdobm, f_childno) %>%
+  left_join(., x_sample, by = c("pidp")) %>% 
+  filter(f_lchlv == 2) %>% 
+  rename("kbirthm" = "f_lchdobm") %>% 
+  rename("kbirthy" = "f_lchdoby") %>% 
+  rename("childno" = "f_childno") %>%
+  mutate(kbirthm = ifelse(kbirthm < 0, NA, kbirthm)) %>% 
+  mutate(kbirthy = ifelse(kbirthy < 0, NA, kbirthy)) %>% 
+  dplyr::select(-f_lchlv, -dob, -anychild_dv) %>% 
+  mutate(wave = 6)
 
 combined_child <-
-  bind_rows(res_child, parent_sample) %>% 
-  dplyr::select(mpidp, kbirthy, kbirthm, a_childno) %>% 
+  bind_rows(mothers, fathers) %>% 
+  # dplyr::select(mpidp, kbirthy, kbirthm, a_childno) %>% 
   mutate(wave = 1) %>% 
-  mutate(fpidp = NA)
+  bind_rows(., res_child_w1) %>% 
+  bind_rows(., res_child_w6) %>% 
+  arrange(pidp, wave)
 
 # -------------------------------------------------------------------------
 # Building prospective fertility histories --------------------------------
@@ -228,7 +446,17 @@ k_newchild <- k_child %>%
   rename("mpidp" =  "k_mnpid") %>% 
   mutate(wave = 11)
 
-child <- 
+l_newchild <- l_child %>% 
+  filter(l_ynew == 1) %>%  
+  dplyr::select(pidp, pid, l_ynew, l_birthy, l_birthm, l_mnpid, l_fnpid) %>% 
+  rename("fpidp" = "l_fnpid") %>% 
+  rename("ynew" =  "l_ynew") %>% 
+  rename("kbirthy" =  "l_birthy") %>% 
+  rename("kbirthm" =  "l_birthm") %>% 
+  rename("mpidp" =  "l_mnpid") %>% 
+  mutate(wave = 12)
+
+newchild <- 
   bind_rows(b_newchild, c_newchild) %>% 
   bind_rows(., d_newchild) %>% 
   bind_rows(., e_newchild) %>% 
@@ -238,36 +466,52 @@ child <-
   bind_rows(., i_newchild) %>% 
   bind_rows(., j_newchild) %>% 
   bind_rows(., k_newchild) %>% 
-  dplyr::select(-ynew, -pidp)
+  bind_rows(., l_newchild) %>% 
+  dplyr::select(-ynew, -pidp, -pid) %>% 
+  mutate(fpidp = ifelse(fpidp < 0, NA, fpidp),
+         mpidp = ifelse(mpidp < 0, NA, mpidp))
+
+pro_mothers <- newchild %>% 
+  select(-fpidp) %>% 
+  filter(!is.na(mpidp)) %>% 
+  rename("pidp" = "mpidp") %>% 
+  mutate(sex = 2) %>% 
+  arrange(pidp, wave)
+
+pro_fathers <- newchild %>% 
+  select(-mpidp) %>% 
+  filter(!is.na(fpidp)) %>% 
+  rename("pidp" = "fpidp") %>% 
+  mutate(sex = 1) %>% 
+  arrange(pidp, wave)
+
+new_parents <- 
+  bind_rows(pro_mothers, pro_fathers) %>% 
+  arrange(pidp, wave)
 
 # -------------------------------------------------------------------------
 # Combined fertility histories --------------------------------------------
 # -------------------------------------------------------------------------
 
-combined_child2 <- 
-  bind_rows(combined_child, child) %>% 
-  rename("pidp" = "mpidp") %>% 
-  arrange(pidp, kbirthy)
-
-fathers_child <- combined_child2 %>% 
-  filter(fpidp > 0) %>% 
-  dplyr::select(2:7) %>% 
-  rename("pidp" = "fpidp")
-
-combined_child3 <- 
-  bind_rows(combined_child2, fathers_child)
-
-combined_child4 <- 
-  left_join(combined_child3, x_sample, by = "pidp") %>% 
+all_child <- 
+  bind_rows(combined_child, new_parents) %>% 
+  dplyr::select(-hhorig, -sex) %>% 
+  left_join(., x_sample, by = "pidp") %>% 
+  filter(anychild_dv == 1) %>%  #This removes observations with non-biological children that live in the household
+  dplyr::select(-anychild_dv) %>% 
+  arrange(pidp, wave) %>% 
+  relocate(wave, .after = "pidp") %>% 
   unite(kdob, c(kbirthm, kbirthy), sep = "-") %>% 
   mutate(kdob = parse_date_time(kdob, "my")) %>% 
-  arrange(pidp, kdob) %>% 
   group_by(pidp) %>% 
   mutate(bno = row_number()) %>% 
-  mutate(check = a_childno - bno) %>% 
+  mutate(check = childno - bno) %>% 
   ungroup()
 
-saveRDS(combined_child4, file = "fertukhls.rds")
+all_child %>% count(bno) #After using the little parity information available, it appears that this is a generally reliable measure of parity
+
+
+saveRDS(all_child, file = "fertukhls.rds")
 fertukhls <- file.choose()
 fertukhls <- readRDS(fertukhls)
 
@@ -299,14 +543,13 @@ fertbhps2 <- fertbhps %>%
          wave = ifelse(wave == 0, 1, wave)) %>% #All births before the first interview are counted as wave 1
   select(pidp, pid, wave, hhorig, sex, dob, kdob, bno)
 
-fertbhps2 %>% count(dummywave)
 
 ## - UKHLS
 fertukhls2 <- fertukhls %>%
-  select(pidp, pid, wave, hhorig, sex, dob, kdob, bno) %>%
+  select(pidp, wave, hhorig, sex, dob, kdob, bno) %>%
   rename("ukhlswave" = "wave") %>%
   mutate(wave = ukhlswave + 18) %>%
-  relocate(wave, .after = "pid")
+  relocate(wave, .after = "pidp")
 
 ## - Combined
 allfert <- 

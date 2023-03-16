@@ -1,12 +1,11 @@
 #Coded by: Brian Buh
-#Started on: 02.06.2022
-#Last Updated: 13.06.2022
+#Started on: 13.03.2023
+#Last Updated: 
 
 ### Packages
 library(tidyverse)
 library(haven)
 library(lubridate)
-library(usethis)
 
 
 ###########################################################################
@@ -150,12 +149,12 @@ bhpsxwave <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_Specia
 fert_his <- read_dta("S:/questionnaires/UKHLS/bhps_fertility_partnership_histories/stata8/family_cleaned_dates.dta")
 
 
+
 # -------------------------------------------------------------------------
 # UKHLS -------------------------------------------------------------------
 # -------------------------------------------------------------------------
 
 #wave 1
-a_indall <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w1/a_indall_protect.dta")
 a_child <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w1/a_child_protect.dta")
 a_natchild <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w1/a_natchild_protect.dta")
 a_indresp <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w1/a_indresp_protect.dta")
@@ -185,6 +184,7 @@ e_hhresp <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_Special
 f_child <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w6/f_child_protect.dta")
 f_indresp <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w6/f_indresp_protect.dta")
 f_hhresp <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w6/f_hhresp_protect.dta")
+f_natchild <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w6/f_natchild_protect.dta")
 
 #wave 7
 g_child <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w7/g_child_protect.dta")
@@ -211,6 +211,11 @@ k_child <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialL
 k_indresp <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w11/k_indresp_protect.dta")
 k_hhresp <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w11/k_hhresp_protect.dta")
 
+#wave 12
+l_child <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w12/l_child_protect.dta")
+l_indresp <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w12/l_indresp_protect.dta")
+l_hhresp <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_w12/l_hhresp_protect.dta")
+
 
 #xwavedata
 xwave <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_SpecialLicence/ukhls_wx/xwavedat_protect.dta")
@@ -234,15 +239,16 @@ a_parent <- read_dta("S:/Questionnaires/UKHLS/Understanding_)Societyw1-9_Special
 # file that needs to be fixed. The simplest answer would be to separate the month
 # and years to separate variables in STATA and then bring the files into R
 
+### THESE SETS NEED TO BE REBUILT TO INCLUDE WAVES 11 AND 12
+
 #Merged
 merged_hist <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/Merged Dataset.dta")
 
 #UKHLS
-annual_his <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/UKHLS Annual History.dta")
-life_his <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/UKHLS Life History.dta")
-edu_his <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/UKHLS Education History.dta")
+annual_his <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/annual_life_edit.dta")
+edu_his <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/education_edit.dta")
 #Left Full Time Education
-left_edu <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/Left Full Time Education.dta")
+left_edu <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/left_education_edit.dta")
 # edu_his_var <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/Education Variables - Cleaned.dta")
 
 
@@ -252,8 +258,3 @@ left_edu <- read_dta("S:/Questionnaires/UKHLS/stata_work_life_histories/Left Ful
 ###########################################################################
 
 part_his <- read_dta("S:/Questionnaires/UKHLS/partnership-histories/stata/stata13/phistory_long.dta")
-
-
-
-
-

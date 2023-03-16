@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 13.06.2022
-#Last Updated: 06.10.2022
+#Last Updated: 14.02.2023 (added ppid)
 
 library(tidyverse)
 library(haven)
@@ -23,8 +23,8 @@ hhvar <- c("hid", "hidp", "ivfho_bh", # Not in Wave 1
 
 #The variable "ivfho_bh" are not in Wave 1
 hhvar1 <- c("hid", "hidp",
-           "fihhmngrs_dv", "fihhmb", "hhneti", "hhyneti", "hhnetde", "hhnetde2", "bhcinda", "loctax", #These are the income variables
-           "hcost", "xphsg", "xphsn", "xpmg", "rent", "rentg_bh", "tenure_dv", "hsownd_bh", "hsroom", "hstype") #These are housing cost variables
+            "fihhmngrs_dv", "fihhmb", "hhneti", "hhyneti", "hhnetde", "hhnetde2", "bhcinda", "loctax", #These are the income variables
+            "hcost", "xphsg", "xphsn", "xpmg", "rent", "rentg_bh", "tenure_dv", "hsownd_bh", "hsroom", "hstype") #These are housing cost variables
 
 w1hhvar <- paste0('ba_', hhvar1)
 
@@ -183,24 +183,22 @@ saveRDS(hh_bhps, file = "hh_bhps.rds")
 # Individual datasets -----------------------------------------------------
 # -------------------------------------------------------------------------
 
-ba_indresp %>% count(ba_hgbiof)
-
 
 #Selecting variables and give them wave specific names
-indvar <- c("hid", "hidp", "hhorig", "sex", "birthm", "birthy", "age_dv", "istrtdatm", "istrtdaty", #basic individual variables
-           "paynty", "paynti", #These are the income variables
-           "xpchcf", "xpchc", "f135", #These are childcare cost variables
-           "f139", "lkmove", #housing benefit
-           "plbornc", "gor_dv", "mlstat", "spinhh", "jbstat", "qfedhi", #controls
-           "hgbiom", "hgbiof", "hhsize", "plnowm", "plnowy4") #live with parents
-
-#Some variables are not included in wave 1: "birthm", "birthy", "istrtdaty"
-indvar1 <- c("hid", "hidp", "hhorig", "sex", "age_dv", "istrtdatm", #basic individual variables
+indvar <- c("hid", "hidp", "hhorig", "pno", "ppno", "sex", "birthm", "birthy", "age_dv", "istrtdatm", "istrtdaty", #basic individual variables
             "paynty", "paynti", #These are the income variables
             "xpchcf", "xpchc", "f135", #These are childcare cost variables
             "f139", "lkmove", #housing benefit
             "plbornc", "gor_dv", "mlstat", "spinhh", "jbstat", "qfedhi", #controls
             "hgbiom", "hgbiof", "hhsize", "plnowm", "plnowy4") #live with parents
+
+#Some variables are not included in wave 1: "birthm", "birthy", "istrtdaty"
+indvar1 <- c("hid", "hidp", "hhorig", "pno", "ppno", "sex", "age_dv", "istrtdatm", #basic individual variables
+             "paynty", "paynti", #These are the income variables
+             "xpchcf", "xpchc", "f135", #These are childcare cost variables
+             "f139", "lkmove", #housing benefit
+             "plbornc", "gor_dv", "mlstat", "spinhh", "jbstat", "qfedhi", #controls
+             "hgbiom", "hgbiof", "hhsize", "plnowm", "plnowy4") #live with parents
 
 
 w1indvar <- paste0('ba_', indvar1)
@@ -247,7 +245,20 @@ ba_ind <- ba_indresp %>%
   mutate(birthm = NA) %>% 
   mutate(birthy = NA) %>% 
   mutate(istrtdaty = NA) %>% 
-  mutate(age_dv = NA)
+  mutate(age_dv = NA) %>% 
+  arrange(hid)
+
+#Test to see if partner matching works
+# partner <- ba_ind %>% 
+#   select(pid, hid, pno, jbstat) %>% 
+#   rename("parjbstat" = "jbstat") %>% 
+#   rename("ppno" = "pno")
+#   
+# ego <- ba_ind %>% 
+#   select(pid, hid, pno, ppno, jbstat) %>% 
+#   left_join(., partner, by = c("hid", "ppno"))
+
+
 
 bb_ind <- bb_indresp %>% 
   dplyr::select("pidp", "pid",  w2indvar) %>% 
@@ -362,7 +373,7 @@ ind_bhps <-
   ungroup() %>% 
   mutate(age_dv = ifelse(wave == 1 & birthm <=8, 0, ifelse(wave ==1 & birthm >= 9, 1, age_dv)),
          age_dv = ifelse(wave == 1, (age_dv + 1990) - birthy, age_dv))
-  
+
 saveRDS(ind_bhps, file = "ind_bhps.rds")
 
 
@@ -506,6 +517,8 @@ w10_varhh <- paste0('j_', wave_varhh)
 
 w11_varhh <- paste0('k_', wave_varhh)
 
+w12_varhh <- paste0('l_', wave_varhh)
+
 
 #Preparing the variables for merging
 a_hh <- a_hhresp %>% 
@@ -563,6 +576,11 @@ k_hh <- k_hhresp %>%
   rename_with(~ wave_varhh[which(w11_varhh == .x)], .cols = w11_varhh) %>% 
   mutate(wave = 11)
 
+l_hh <- l_hhresp %>% 
+  dplyr::select(w12_varhh)%>% 
+  rename_with(~ wave_varhh[which(w12_varhh == .x)], .cols = w12_varhh) %>% 
+  mutate(wave = 12)
+
 hh_ukhls <-
   bind_rows(a_hh, b_hh) %>%
   bind_rows(., c_hh) %>%
@@ -574,6 +592,7 @@ hh_ukhls <-
   bind_rows(., i_hh) %>%
   bind_rows(., j_hh) %>% 
   bind_rows(., k_hh) %>%
+  bind_rows(., l_hh) %>%
   relocate("wave", .after = "hidp") %>%
   arrange(hidp, wave)
 
@@ -584,17 +603,21 @@ saveRDS(hh_ukhls, file = "hh_ukhls.rds")
 # Individual datasets  ----------------------------------------------------
 # -------------------------------------------------------------------------
 
+#Use the xwav df for ukborn
+xwavedat <- xwave %>% 
+  dplyr::select(pidp, ukborn)
+
 #Sorting out needed variables from indresp
 #Changes in these lists allow for much quick adding and subtracting variables
-wave_var <- c("hhorig", "hidp", "sex", "birthm", "birthy", "istrtdatm", "istrtdaty", "age_dv", "qfhigh_dv", "hiqual_dv",
-              "gor_dv", "marstat_dv", "jbstat", "plbornc", "jbisco88_cc", "pbnft8", "lkmove",
+wave_var <- c("hhorig", "hidp", "ppid", "sex", "birthm", "birthy", "istrtdatm", "istrtdaty", "age_dv", "qfhigh_dv", "hiqual_dv",
+              "gor_dv", "marstat_dv", "jbstat", "plbornc", "jbisco88_cc", "pbnft8", "lkmove", "urban_dv",
               "hgbiom", "hgbiof", "hgadoptm", "hgadoptf", #live with parents
               "plnowm", "plnowy4", "fimnnet_dv")
 
-wave1_var <- c("hhorig", "hidp", "sex", "birthm", "birthy", "istrtdatm", "istrtdaty", "age_dv", "qfhigh_dv", "hiqual_dv",
-              "gor_dv", "marstat_dv", "jbstat", "plbornc", "jbisco88_cc", "pbnft8", "lkmove",
-              "hgbiom", "hgbiof", "hgadoptm", "hgadoptf", #live with parents
-              "mvmnth", "mvyr", "fimnnet_dv")
+wave1_var <- c("hhorig", "hidp", "ppid", "sex", "birthm", "birthy", "istrtdatm", "istrtdaty", "age_dv", "qfhigh_dv", "hiqual_dv",
+               "gor_dv", "marstat_dv", "jbstat", "plbornc", "jbisco88_cc", "pbnft8", "lkmove", "urban_dv",
+               "hgbiom", "hgbiof", "hgadoptm", "hgadoptf", #live with parents
+               "mvmnth", "mvyr", "fimnnet_dv")
 
 #Add the wave prefix to the variable list
 w1_var <- paste0('a_', wave1_var)
@@ -618,6 +641,8 @@ w9_var <- paste0('i_', wave_var)
 w10_var <- paste0('j_', wave_var)
 
 w11_var <- paste0('k_', wave_var)
+
+w12_var <- paste0('l_', wave_var)
 
 
 #Preparing the variables for merging
@@ -678,6 +703,11 @@ k_ind <- k_indresp %>%
   rename_with(~ wave_var[which(w11_var == .x)], .cols = w11_var) %>% 
   mutate(wave = 11)
 
+l_ind <- l_indresp %>% 
+  dplyr::select("pidp", w12_var) %>% 
+  rename_with(~ wave_var[which(w12_var == .x)], .cols = w12_var) %>% 
+  mutate(wave = 12)
+
 ind_ukhls <-
   bind_rows(a_ind, b_ind) %>%
   bind_rows(., c_ind) %>%
@@ -689,9 +719,11 @@ ind_ukhls <-
   bind_rows(., i_ind) %>%
   bind_rows(., j_ind) %>% 
   bind_rows(., k_ind) %>%
+  bind_rows(., l_ind) %>%
   relocate("wave", .after = "pidp") %>%
   # relocate("hhorig", .after = "wave") %>% 
-  arrange(pidp, wave) 
+  arrange(pidp, wave) %>% 
+  left_join(., xwavedat, by = "pidp")
 
 
 saveRDS(ind_ukhls, file = "ind_ukhls.rds")
@@ -712,11 +744,6 @@ indhhukhls <- left_join(ind_ukhls, hh_ukhls, by= c("hidp","wave")) %>%
   relocate(wave, .after = "pidp")
 
 saveRDS(indhhukhls, file = "indhhukhls.rds")
-
-
-
-
-
 
 
 

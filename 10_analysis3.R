@@ -245,7 +245,7 @@ saveRDS(b3,"b3.rds")
 mb3 <- margins(b3)
 summary(mb3)
 
-cat_plot(b3, pred = parity, modx = ratio_cat2,
+cat_plot(b3, pred = parity, modx = ratio_cat2, mod2 = emp,
          point.size = 2,
          line.thickness = 0.8,
          geom.alpha = 1,

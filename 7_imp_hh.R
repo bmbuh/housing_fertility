@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 13.09.2022
-#Last Updated: 13.10.2022
+#Last Updated: 14.02.2022
 
 #This script imputs missing data for the following variables:
 ## hc, hhinc, tenure, hsroom, lkmove, edu, partner, emp, ukborn
@@ -87,6 +87,7 @@ ladimp <- cballlad %>%
          -name, -lowquar, -oci, -indshare, #remove oci and indshare here and recreate after imputation
          -plnowm, -plnowy4
          ) %>% 
+  mutate(paremp = ifelse(partner == "single", "single", paremp)) %>% 
   #change lkmove "I don't know" to NA
   mutate(lkmove = ifelse(lkmove == -1, NA, lkmove),
          lkmove = ifelse(lkmove == 1, 0, ifelse(lkmove == 2, 1, NA)),
@@ -100,7 +101,14 @@ ladimp <- cballlad %>%
          hhorig = ifelse(hhorig <= 0, NA, hhorig),
          hhsize = as.numeric(hhsize),
          hhsize = ifelse(hhsize <= 0, NA, hhsize),
-         hsroom = as.numeric(hsroom))
+         hsroom = as.numeric(hsroom)) %>% 
+  mutate(edu = as.factor(edu),
+         partner = as.factor(partner),
+         emp = as.factor(emp),
+         paremp = as.factor(paremp),
+         tenure = as.factor(tenure))
+
+ladimp %>% count(paremp, partner)
 
 str(ladimp)
 
@@ -122,6 +130,12 @@ summary(ladimp$hhsize) #171 NA
 summary(ladimp$hsroom) #294 NA
 ladimp %>% count(lkmove) #9851 NA
 
+#Split the sample so that MICE doesn't impute single employment to non-single individuals
+ladimpcouple <- ladimp %>% 
+  filter(partner != "single")
+
+ladimpsingle <- ladimp %>% 
+  filter(partner == "single")
 
 
 # ------------------------------------------------------------------------------------------
@@ -129,11 +143,22 @@ ladimp %>% count(lkmove) #9851 NA
 # ------------------------------------------------------------------------------------------
 
 # We run the mice code with 0 iterations 
-imp <-  mice(ladimp, maxit=0) #"cart" = Classification and regression trees
-ladimp2 = complete(imp, 3)
+impcouple <-  mice(ladimpcouple, maxit=0) #"cart" = Classification and regression trees
+ladimpcouple2 = complete(impcouple, 3)
 
-p_missing <- unlist(lapply(ladimp2, function(x) sum(is.na(x))))/nrow(ladimp2)
-sort(p_missing[p_missing > 0], decreasing = TRUE) #largest missing in 13% with name
+p_missing <- unlist(lapply(ladimpcouple2, function(x) sum(is.na(x))))/nrow(ladimpcouple2)
+sort(p_missing[p_missing > 0], decreasing = TRUE)
+
+impsingle <-  mice(ladimpsingle, maxit=0) #"cart" = Classification and regression trees
+ladimpsingle2 = complete(impsingle, 3)
+
+p_missing <- unlist(lapply(ladimpsingle2, function(x) sum(is.na(x))))/nrow(ladimpsingle2)
+sort(p_missing[p_missing > 0], decreasing = TRUE)
+
+ladimp2 <- 
+  bind_rows(ladimpcouple2, ladimpsingle2)
+
+ladimp2 %>% count(partner, paremp)
 
 
 # Extract predictorMatrix and methods of imputation 
@@ -291,12 +316,32 @@ hcfert <- ladimp2 %>%
                             age >= 25 & age <= 29 ~ "25-28",
                             age >= 30 & age <= 34 ~ "30-34",
                             age >= 35 & age <= 39 ~ "25-39",
-                            age >= 40 & age <= 45 ~ "40-45"))
+                            age >= 40 & age <= 45 ~ "40-45"),
+         age_cat2 = case_when(age >= 18 & age <= 29 ~ "u29",
+                              age >= 30 & age <= 45 ~ "o30"),
+         hhemp = case_when(paremp == "single" ~ "single",
+                           emp == "emp" & paremp == "emp" ~ "bothemp",
+                           emp == "unemp" & paremp == "emp" ~ "egounemp",
+                           emp == "student" & paremp == "emp" ~ "egoinactive",
+                           emp == "inactive" & paremp == "emp" ~ "egoinactive",
+                           emp == "unemp" | emp == "inactive" | emp == "student" & paremp == "unemp" ~ "bothunemp",
+                           emp == "student" & paremp == "student" ~ "bothunemp",
+                           emp == "student" & paremp == "inactive" ~ "bothunemp",
+                           emp == "emp" & paremp == "unemp" | paremp == "student" | paremp == "inactive" ~ "egoemp"))
+  
 
+
+# emp == "unemp" | emp == "student" | emp == "inactive" & paremp == "unemp" | paremp == "student" | paremp == "inactive" ~ "bothunemp",
+# emp == "student" & paremp == "unemp" | paremp == "student" | paremp == "inactive" ~ "bothunemp",
+# emp == "inactive" & paremp == "unemp" | paremp == "student" | paremp == "inactive" ~ "bothunemp",
 
 saveRDS(hcfert, file = "hcfert.rds")
 str(hcfert)
 
+hcfert %>% count(hhemp)
+
+hcfert %>% count(emp, paremp, hhemp)
+hcfert %>% count(partner, paremp)
 
 hcfert %>% count(ownout)
 

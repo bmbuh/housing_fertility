@@ -26,3 +26,9 @@
 # s4. Test housing costs and household income data for irregularities. Select the best measure
 # s5. Combine dataframes, create uniform variables, create EHA aspects (event, clock, parity)
 # s6. Test model fit and convergence  
+# s7. Imputation for missing data
+# s8. Analysis 1 - Model fit testing
+# s9. Analysis 2 - Variable testing; sensitivity analysis
+# s10. Analysis 3 - Paper models
+# s11. Analysis 4 - Period stratified models
+# s12. Analysis 5 - Property Price Models

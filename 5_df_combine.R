@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 16.06.2022
-#Last Updated: 13.10.2022
+#Last Updated: 14.02.2023 (add partner employment)
 
 library(tidyverse)
 library(haven)
@@ -32,8 +32,8 @@ library(lubridate)
 
 indhhbhps %>% count(plbornc)
 
-bhps5 <- indhhbhps %>% 
-  dplyr::select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hsroom, lkmove, hhyneti, loctax,
+bhpsclean <- indhhbhps %>% 
+  dplyr::select(pidp, wave, hidp, pno, ppno, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, xphsn, xpmg, rent, rentg_bh, tenure_dv, hsownd_bh, hsroom, lkmove, hhyneti, loctax,
          gor_dv, qfedhi, mlstat, spinhh, jbstat, plbornc, hgbiom, hgbiof, hhsize, plnowm, plnowy4, paynty) %>% 
   mutate(year = wave + 1990,
          loctax = ifelse(loctax < 0, NA, loctax),
@@ -50,7 +50,7 @@ bhps5 <- indhhbhps %>%
          period = case_when(year >= 1991 & year <= 1999 ~ "1991-1999",
                             year >= 2000 & year <= 2007 ~ "2000-2007",
                             year >= 2008 & year <= 2012 ~ "2008-2012",
-                            year >= 2013 & year <= 2021 ~ "2013-2021")) %>% 
+                            year >= 2013 & year <= 2022 ~ "2013-2022")) %>% 
   relocate("year", .after = "wave") %>% 
   mutate(hc = xphsn,
          hc = ifelse(is.na(xpmg) & is.na(rent) & is.na(rentg_bh) & hc == 0 & tenure_dv != 1, NA, hc),
@@ -98,7 +98,18 @@ bhps5 <- indhhbhps %>%
   dplyr::select(-qfedhi, -mlstat, -spinhh, -jbstat, -plbornc, -hgbiom, -hgbiof) %>% 
   rename("indinc" = "paynty")
 
-bhps5 %>% count(is.na(loctax))
+
+#Extract partner employment
+bhpspar <- bhpsclean %>%
+  dplyr::select(hidp, pno, emp) %>% 
+  rename("ppno" = "pno") %>% 
+  rename("paremp" = "emp")
+
+bhps5 <- 
+  left_join(bhpsclean, bhpspar, by = c("hidp", "ppno")) %>% 
+  dplyr::select(-pno, -ppno)
+
+bhps5 %>% count(paremp, partner)
   
 saveRDS(bhps5, file = "bhps5.rds")
 
@@ -107,8 +118,8 @@ saveRDS(bhps5, file = "bhps5.rds")
 ############################################################################
 
 
-ukhls5 <- indhhukhls %>% 
-  dplyr::select(pidp, wave, hidp, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, ukborn, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove,
+ukhlsclean <- indhhukhls %>% 
+  dplyr::select(pidp, wave, hidp, ppid, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, ukborn, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove,
          fihhmnnet3_dv, gor_dv, qfhigh_dv, hiqual_dv, f_qfhighoth, marstat_dv, jbstat, plbornc, hgbiom, hgbiof, hgadoptm, hgadoptf,
          hhsize, plnowm, plnowy4, fimnnet_dv) %>% 
   mutate(rent2 = ifelse(rent < 0, NA, rent),
@@ -125,7 +136,7 @@ ukhls5 <- indhhukhls %>%
          period = case_when(year >= 1991 & year <= 1999 ~ "1991-1999",
                             year >= 2000 & year <= 2007 ~ "2000-2007",
                             year >= 2008 & year <= 2012 ~ "2008-2012",
-                            year >= 2013 & year <= 2021 ~ "2013-2021"),
+                            year >= 2013 & year <= 2022 ~ "2013-2022"),
          hhinc = ifelse(hhinc < 0, 0, hhinc)) %>% #To get rid of negative ratios
   relocate("year", .after = "wave") %>% 
   #Variable creation
@@ -170,6 +181,7 @@ ukhls5 <- indhhukhls %>%
            edu = ifelse(edu == "NA", NA, edu),
            edu = ifelse(is.na(edu), edu_cat, edu),
            edu = ifelse(edu == "other", NA, edu)) %>% 
+  rename("urban" = "urban_dv") %>% 
   mutate(partner = ifelse(marstat_dv == 1, "married", ifelse(marstat_dv == 2, "cohab", ifelse(marstat_dv < 0, NA, "single"))), #partnership control
          emp = ifelse(jbstat < 0, NA, ifelse(jbstat == 1 | jbstat == 2, "emp", ifelse(jbstat == 3, "unemp", ifelse(jbstat == 7, "student", "inactive")))), #employment control
          ukborn = ifelse(ukborn == -9, NA, ukborn),
@@ -177,7 +189,8 @@ ukhls5 <- indhhukhls %>%
          parenthh = ifelse(hgbiom > 0 | hgadoptm > 0 | hgbiof > 0 | hgadoptf > 0, 1, 0),
          hsroom = hsrooms + hsbeds, #This mirrors the BHPS variable "hsroom" which is not divided like the UKHLS
          hsroom = ifelse(hsroom < 0, NA, hsroom),
-         lkmove = ifelse(lkmove < -1, NA, lkmove)) %>% 
+         lkmove = ifelse(lkmove < -1, NA, lkmove),
+         urban = ifelse(urban < -1, NA, urban)) %>% 
   group_by(pidp) %>% 
   fill(partner, .direction = "downup") %>% 
   fill(emp, .direction = "downup") %>% 
@@ -186,6 +199,16 @@ ukhls5 <- indhhukhls %>%
   rename("indinc" = "fimnnet_dv") %>% 
   dplyr::select(-qfhigh_dv, -hiqual_dv, -f_qfhighoth, -hiqual_edit, -immedu, -edu_cat, -marstat_dv, -jbstat, -plbornc, -hgbiom, -hgbiof, -hgadoptm, -hgadoptf, -hsrooms, -hsbeds)
 
+
+#Extract partner employment
+ukhlspar <- ukhlsclean %>%
+  dplyr::select(hidp, pidp, emp) %>% 
+  rename("ppid" = "pidp") %>% 
+  rename("paremp" = "emp")
+
+ukhls5 <- 
+  left_join(ukhlsclean, ukhlspar, by = c("hidp", "ppid")) %>% 
+  dplyr::select(-ppid)
 
 saveRDS(ukhls5, file = "ukhls5.rds")
 

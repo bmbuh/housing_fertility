@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 19.09.2022
-#Last Updated: 14.10.2022
+#Last Updated: 30.11.2022
 
 #UPDATE: After talking with Eva I decided the following:
 # 1. I will only focus on women
@@ -147,6 +147,28 @@ labels(hhpart2stats2) <-  c(parity = "Parity", event = "Event", clock = "Exposur
 summary(hhpart2stats2)
 write2html(hhpart2stats2, "hhpart2stats2_period_21-09-2022.html") #UPDATE DATE
 write2word(hhpart2stats2, "hhpart2stats2_period_21-09-2022.docx") #UPDATE DATE
+
+
+# Activity Status, Parity, Ratio_cat2 stats (30.11.2022)
+
+empcheck <- hhpart3 %>% count(parity, ratio_cat2, emp)
+
+# parity 1
+mycontrols <- tableby.control(test = FALSE)
+hhpart3p1stats <-arsenal::tableby(ratio_cat2 ~ emp + event + ratio_cat2 + period + tenure + age + partner + edu + ukborn + oci2, 
+                                data = hhpart3p1, 
+                                weights = weight,
+                                control = mycontrols)
+summary(hhpart3p1stats)
+
+# parity 2
+mycontrols <- tableby.control(test = FALSE)
+hhpart3p2stats <-arsenal::tableby(ratio_cat2 ~ emp + event + ratio_cat2 + period + tenure + age + partner + edu + ukborn + oci2, 
+                                  data = hhpart3p2, 
+                                  weights = weight,
+                                  control = mycontrols)
+summary(hhpart3p2stats)
+write2html(hhpart3p2stats, "hhpart3p1stats_ratiocat2_period_30-11-2022.html")
 
 
 # -------------------------------------------------------------------------

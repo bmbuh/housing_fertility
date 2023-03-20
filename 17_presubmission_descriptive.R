@@ -1,8 +1,7 @@
 #Coded by: Brian Buh
-#Started on: 13.02.2023
-#Last Updated: 16.03.2023 (Start of Post-Colloquium Revision)
+#Started on: 20.03.2023
+#Last Updated:
 
-## This script looks at the paper after the revision by MWD and WiC Colloquium
 
 library(tidyverse)
 library(haven)
@@ -41,40 +40,66 @@ hhpart3 %>% tabyl(age_cat2, tenure, period) %>%
   adorn_pct_formatting(digits = 2) %>%
   adorn_ns()
 
-summary(hhpart3$ratio)
+# DF for removing parity 3
+hhpart4 <- hhpart3 %>% 
+  dplyr::filter(parity != 3)
+
+hhpart4 %>% count(ratio_cat3)
+
+# Heterogeneity testing df
+## Age
+u29 <- hhpart4 %>% filter(age_cat2 == "u29")
+o30 <- hhpart4 %>% filter(age_cat2 == "o30")
+
+## Income
+umedinc <- hhpart4 %>% filter(medinc == 0)
+umedinc %>% count(event, parity, tenure, ratio_cat3)
+omedinc <- hhpart4 %>% filter(medinc == 1)
+omedinc %>% count(event, parity, tenure)
+
+#Urban/rural
+urban <- hhpart4 %>% filter(urban == 1)
+rural <- hhpart4 %>% filter(urban == 2)
+
+# High Price LAD
+highlad <- hhpart4 %>% filter(medlowquar == 1)
+lowlad <- hhpart4 %>% 
+  filter(!is.na(lowquar), is.na(medlowquar))
+
+# Housing crisis
+precrisis <- hhpart4 %>% filter(period == "1992-1999" | period == "2000-2007")
+postcrisis <- hhpart4 %>% filter(period == "2008-2012" | period == "2013-2022")
 
 # DF for parity specific models
-hhpart3p1 <- hhpart3 %>% filter(parity == 1)
-hhpart3p2 <- hhpart3 %>% filter(parity == 2)
-hhpart3p3 <- hhpart3 %>% filter(parity == 3)
+hhpart4p1 <- hhpart4 %>% filter(parity == 1)
+hhpart4p2 <- hhpart4 %>% filter(parity == 2)
 
 
 #Ratio Summary Statistics
-summary(hhpart3p1$ratio)
-summary(hhpart3p2$ratio)
-summary(hhpart3p3$ratio)
+summary(hhpart4p1$ratio)
+summary(hhpart4p2$ratio)
 
-tenure <- hhpart3 %>% 
+tenure <- hhpart4 %>% 
   group_by(tenure) %>% 
   summarise(mean(ratio), median(ratio))
 
-tenure2 <- hhpart3 %>% 
+tenure2 <- hhpart4 %>% 
   group_by(tenure, age_cat2, parity) %>% 
   summarise(n())
 
-hhemp <- hhpart3 %>% 
+hhemp <- hhpart4 %>% 
   group_by(hhemp, parity) %>% 
   summarise(mean(ratio), median(ratio))
 
-period <- hhpart3 %>% 
+period <- hhpart4 %>% 
   group_by(period) %>% 
   summarise(mean(ratio), median(ratio))
 
 
-hhpart_count <- hhpart3 %>% 
+hhpart_count <- hhpart4 %>% 
   filter(period == "2000-2007" | period == "2013-2022") 
 
-hhpart3 %>% 
+hhpart4 %>% 
   mutate(cost = ifelse(ratio > 0.25, 1, 0)) %>% 
   tabyl(period, cost, tenure) %>% 
   adorn_percentages("row") %>%
@@ -100,20 +125,31 @@ hhpart3 %>%
 # Descriptive statistics  -------------------------------------------------
 # -------------------------------------------------------------------------
 
-event <- hhpart3 %>% count(event, parity) #6,649 events (2,892 parity one; 2,328 parity two; 892 parity three)
-p1 <- hhpart3 %>% filter(parity == 1, event == 1)
+unique <- hhpart4 %>% 
+  distinct(pidp, .keep_all = TRUE)
+
+uniquep1 <- hhpart4 %>% 
+  filter(parity == 1) %>% 
+  distinct(pidp, .keep_all = TRUE)
+
+uniquep2 <- hhpart4 %>% 
+  filter(parity == 2) %>% 
+  distinct(pidp, .keep_all = TRUE)
+
+event <- hhpart4 %>% count(event, parity) #5,200 events (p1 = 2,892; p2 = 2,328)
+p1 <- hhpart4 %>% filter(parity == 1, event == 1)
 summary(p1$clock)
 sd(p1$clock)
-p2 <- hhpart3 %>% filter(parity == 2, event == 1)
+p2 <- hhpart4 %>% filter(parity == 2, event == 1)
 summary(p2$clock)
 sd(p2$clock)
-p3 <- hhpart3 %>% filter(parity == 3, event == 1)
+p3 <- hhpart4 %>% filter(parity == 3, event == 1)
 summary(p3$clock)
 sd(p3$clock)
-ind <- hhpart3 %>% distinct(pidp, parity) %>% count(parity) #13,225 unique individuals
-eventlad <- hhpart3 %>% distinct(code)
+ind <- hhpart4 %>% distinct(pidp, parity) %>% count(parity) #13,225 unique individuals
+eventlad <- hhpart4 %>% distinct(code)
 
-obs <- hhpart3 %>% 
+obs <- hhpart4 %>% 
   group_by(pidp) %>% 
   mutate(obs = length(pidp),
          numobs = row_number(pidp)) %>% 
@@ -122,7 +158,7 @@ summary(obs$obs)
 sd(obs$obs)
 
 
-obsp1 <- hhpart3p1 %>%
+obsp1 <- hhpart4p1 %>%
   filter(parity == 1) %>% 
   group_by(pidp) %>% 
   mutate(obs = length(pidp)) %>% 
@@ -130,7 +166,7 @@ obsp1 <- hhpart3p1 %>%
 summary(obsp1$obs)
 sd(obsp1$obs)
 
-obsp2 <- hhpart3p2 %>%
+obsp2 <- hhpart4p2 %>%
   filter(parity == 2) %>% 
   group_by(pidp) %>% 
   mutate(obs = length(pidp)) %>% 
@@ -138,7 +174,7 @@ obsp2 <- hhpart3p2 %>%
 summary(obsp2$obs)
 sd(obsp2$obs)
 
-obsp3 <- hhpart3p3 %>%
+obsp3 <- hhpart4p3 %>%
   filter(parity == 3) %>% 
   group_by(pidp) %>% 
   mutate(obs = length(pidp)) %>% 
@@ -148,30 +184,38 @@ sd(obsp3$obs)
 
 
 #Tenure
-hhpart3p1 %>% tabyl(tenure) #owned = 68.2%, #rent = 23.4%, social = 8.4%
-hhpart3p2 %>% tabyl(tenure) #owned = 73.3%, #rent = 14.1%, social = 12.6%
-hhpart3p3 %>% tabyl(tenure) #owned = 77.5%, #rent = 9.1%, social = 13.4%
+hhpart4p1 %>% tabyl(tenure) #owned = 68.2%, #rent = 23.4%, social = 8.4%
+hhpart4p2 %>% tabyl(tenure) #owned = 73.3%, #rent = 14.1%, social = 12.6%
 
 #hh employment
-hhpart3p1 %>% tabyl(hhemp) #bothemp = 73.8%, bothunemp = 4.1%, egoemp = 5.4%, egoinactive = 13.6%, egounemp 3.0%
-hhpart3p2 %>% tabyl(hhemp) #bothemp = 66.0%, bothunemp = 4.6%, egoemp = 4.5%, egoinactive = 22.8%, egounemp 2.1%
-hhpart3p3 %>% tabyl(hhemp) #bothemp = 68.4%, bothunemp = 4.2%, egoemp = 4.9%, egoinactive = 21.0%, egounemp 2.0%
+hhpart4p1 %>% tabyl(hhemp) #bothemp = 73.8%, bothunemp = 4.1%, egoemp = 5.4%, egoinactive = 13.6%, egounemp 3.0%
+hhpart4p2 %>% tabyl(hhemp) #bothemp = 66.0%, bothunemp = 4.6%, egoemp = 4.5%, egoinactive = 22.8%, egounemp 2.1%
 
 
+#Output
+mycontrols <- tableby.control(test = FALSE)
+hhpart4stats <-arsenal::tableby(parity ~ event + clock + ratio_cat3 + period + tenure + age + partner + edu + ukborn + hhemp, 
+                            data = hhpart4, 
+                            weights = weight,
+                            control = mycontrols)
 
+summary(hhpart4stats)
+write2html(hhpart4stats, "hhpart4stats_parity_20-03-2023.html") #UPDATE DATE
+write2word(hhpart4stats, "hhpart4stats_parity_20-03-2023.docx") #UPDATE DATE
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Who are the partnered households with parents?
 lwp <- hhpart %>% #lwp = livewithparents
-  dplyr::filter(partner != "single", parenthh == 1, parity != 3) %>%  #2230 individuals
-  mutate(ownout = as.character(ownout))
+  dplyr::filter(partner != "single", parenthh == 1) #2230 individuals
 
 lwp2 <- lwp %>% 
   distinct(pidp) #798 distinct households
 
 mycontrols <- tableby.control(test = FALSE)
-lwpstats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + hhemp + share + oci2 + ownout, 
-                                data = lwp, 
-                                weights = weight,
-                                control = mycontrols)
+lwpstats <-arsenal::tableby(parity ~ event + clock + ratio + ratio_cat2 + period + tenure + age + partner + edu + ukborn + hhemp + share + oci2, 
+                            data = lwp, 
+                            weights = weight,
+                            control = mycontrols)
 
 summary(lwpstats)
 write2html(lwpstats, "lwpstats_parity_16-03-2023.html") #UPDATE DATE
@@ -199,7 +243,7 @@ write2word(lwpstats, "hhpart_ratio0_16-03-2023.docx") #UPDATE DATE
 # Sample Age Dstribution  --------------------------------------------------------
 # -------------------------------------------------------------------------
 
-hhpart3 %>% 
+hhpart4 %>% 
   ggplot(aes(x = age)) + 
   geom_histogram(binwidth = 1, color = "black", fill = "#e36414", size = 1) +
   # scale_fill_manual(values = c("#CCA43B", "#0f4c5c")) +
@@ -211,7 +255,7 @@ hhpart3 %>%
   labs(title = "Age Distribution of Sample") +
   xlab("Women's age") +
   ylab("Count")
-ggsave("distribution_age_hhpart3_s13_15-02-2023.png", dpi = 500)  
+ggsave("distribution_age_hhpart4_s13_15-02-2023.png", dpi = 500)  
 
 
 
@@ -220,7 +264,7 @@ ggsave("distribution_age_hhpart3_s13_15-02-2023.png", dpi = 500)
 # -------------------------------------------------------------------------
 
 
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "0",
@@ -254,7 +298,7 @@ hhpart3 %>%
 # Ratio by parity  --------------------------------------------------------
 # -------------------------------------------------------------------------
 
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   mutate(parity = recode(parity, 
                          "1" = "Parity 1",
@@ -296,7 +340,7 @@ ggsave("ratio_distribution_parity_s13_14-02-2023.png", width = 10, height = 10, 
 # Ratio by tenure ---------------------------------------------------------
 # -------------------------------------------------------------------------
 
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 
   mutate(tenure = recode(tenure, 
                          "owned" = "Owned",
@@ -339,14 +383,14 @@ ggsave("ratio_distribution_tenure_s13_13-02-2023.png", width = 10, height = 10, 
 # -------------------------------------------------------------------------
 
 
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 
   mutate(hhemp = recode(hhemp, 
-                         "bothemp" = "Both Employed",
-                         "bothunemp" = "Both Unemployed",
-                         "egoemp" = "Woman Employed, Man Not",
-                         "egoinactive" = "Woman Inactive",
-                         "egounemp" = "Woman Unemployed")) %>% 
+                        "bothemp" = "Both Employed",
+                        "bothunemp" = "Both Unemployed",
+                        "egoemp" = "Woman Employed, Man Not",
+                        "egoinactive" = "Woman Inactive",
+                        "egounemp" = "Woman Unemployed")) %>% 
   mutate(hhemp = fct_relevel(hhemp, c("Both Employed", "Both Unemployed",  "Woman Inactive", "Woman Unemployed", "Woman Employed, Man Not"))) %>% 
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "0",
@@ -384,7 +428,7 @@ ggsave("ratio_distribution_hhemp_s13_14-02-2023.png", width = 10, height = 10, u
 # Ratio by agetenure ------------------------------------------------------
 # -------------------------------------------------------------------------
 
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>% 
   unite(agetenure, age_cat2, tenure, sep = "", remove = FALSE) %>% 
   mutate(ratio_cat = recode(ratio_cat,
@@ -422,7 +466,7 @@ ggsave("ratio_distribution_agetenure_s13_14-02-2023.png", width = 10, height = 1
 # Ratio by paritytenure  --------------------------------------------------
 # -------------------------------------------------------------------------
 
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   unite(paritytenure, parity, tenure, sep = "", remove = FALSE) %>% 
   mutate(ratio_cat = recode(ratio_cat,
@@ -460,7 +504,7 @@ ggsave("ratio_distribution_paritytenure_s13_14-02-2023.png", width = 10, height 
 # Ratio by period ---------------------------------------------------------
 # -------------------------------------------------------------------------
 
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "0",
@@ -501,7 +545,7 @@ ggsave("ratio_distribution_period_s13_14-02-2023.png", width = 10, height = 10, 
 # Ratio by periodtenure  --------------------------------------------------
 # -------------------------------------------------------------------------
 
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0) %>%
   unite(periodtenure, period, tenure, sep = "", remove = FALSE) %>% 
   mutate(ratio_cat = recode(ratio_cat,
@@ -535,7 +579,7 @@ hhpart3 %>%
 ggsave("ratio_distribution_periodtenure_s13_14-02-2023.png", width = 10, height = 10, units = "in", dpi = 500)
 
 #Period-Rent only
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0, tenure == "rent") %>%
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "0",
@@ -569,7 +613,7 @@ ggsave("ratio_distribution_periodrent_s13_14-02-2023.png", width = 10, height = 
 
 
 #Period-Owner only
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0, tenure == "owned") %>%
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "0",
@@ -602,7 +646,7 @@ hhpart3 %>%
 ggsave("ratio_distribution_periodowned_s13_14-02-2023.png", width = 10, height = 10, units = "in", dpi = 500)
 
 #Period-Social only
-hhpart3 %>% 
+hhpart4 %>% 
   filter(!is.na(ratio), ratio < 1, ratio > 0, tenure == "social") %>%
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "0",

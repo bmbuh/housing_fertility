@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 13.09.2022
-#Last Updated: 14.02.2022
+#Last Updated: 16.03.2022
 
 #This script imputs missing data for the following variables:
 ## hc, hhinc, tenure, hsroom, lkmove, edu, partner, emp, ukborn
@@ -305,14 +305,19 @@ ladimp3 <- ladimp2 %>%
                                                    "30-40",
                                                    "40-100")),
          ratio_cat3 = cut(ratio, 
-                          breaks = c(-0.1, 0.0, 0.15, 0.3, 0.45, 0.6, 1),
-                          labels = c("0", "0.1-15", "15-30", "30-45", "45-60", "60-100")),
-         ratio_cat3 = fct_relevel(ratio_cat3, c("15-30",
-                                                "0",
-                                                "0.1-15",
-                                                "30-45",
-                                                "45-60",
-                                                "60-100")),
+                          breaks = c(-0.1, 0.1, 0.2, 0.3, 0.4, 1),
+                          labels = c("0-10", "10-20", "20-30", "30-40", "40-100")),
+         ratio_cat3 = fct_relevel(ratio_cat3, c("0-10",
+                                                    "10-20",
+                                                    "20-30",
+                                                    "30-40",
+                                                    "40-100")),
+         ratio_cat2alt2 = fct_relevel(ratio_cat2, c("0.1-10",
+                                                    "0",
+                                                    "10-20",
+                                                    "20-30",
+                                                    "30-40",
+                                                    "40-100")),
          age_cat = case_when(age >= 18 & age <= 24 ~ "18-24",
                             age >= 25 & age <= 29 ~ "25-28",
                             age >= 30 & age <= 34 ~ "30-34",
@@ -331,6 +336,7 @@ ladimp3 <- ladimp2 %>%
                            emp == "emp" & paremp == "unemp" | paremp == "student" | paremp == "inactive" ~ "egoemp"))
   
 ladimp3 %>% count(hhemp)
+ladimp3 %>% count(ratio_cat3)
 
 
 #Median yearly hh income

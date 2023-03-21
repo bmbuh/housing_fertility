@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 20.03.2023 
-#Last Updated: 
+#Last Updated: 21.03.2023
 
 ## After analyzing the feedback from MWD and the colloquium I have made the following decisions for the manuscript:
 # 1. Drop overcrowding and mediation analysis
@@ -46,35 +46,49 @@ hhpart3 <- hhpart2 %>%
 hhpart4 <- hhpart3 %>% 
   dplyr::filter(parity != 3)
 
-hhpart4 %>% count(ratio_cat3)
+# DF for parity specific models
+hhpart4p1 <- hhpart4 %>% filter(parity == 1)
+hhpart4p2 <- hhpart4 %>% filter(parity == 2)
+
 
 # Heterogeneity testing df
 ## Age
 u29 <- hhpart4 %>% filter(age_cat2 == "u29")
+u29 %>% count(ratio_cat3)
 o30 <- hhpart4 %>% filter(age_cat2 == "o30")
+o30 %>% count(ratio_cat3)
 
 ## Income
-umedinc <- hhpart4 %>% filter(medinc == 0)
-umedinc %>% count(event, parity, tenure, ratio_cat3)
-omedinc <- hhpart4 %>% filter(medinc == 1)
-omedinc %>% count(event, parity, tenure)
+umedinc <- hhpart4 %>% filter(medinc == 1)
+umedinc %>% count(ratio_cat3)
+umedinc %>% tabyl(tenure)
+summary(umedinc$hhinc)
+omedinc <- hhpart4 %>% filter(medinc == 0)
+omedinc %>% count(ratio_cat3)
+omedinc %>% tabyl(tenure)
+summary(omedinc$hhinc)
 
 #Urban/rural
 urban <- hhpart4 %>% filter(urban == 1)
 rural <- hhpart4 %>% filter(urban == 2)
 
 # High Price LAD
-highlad <- hhpart4 %>% filter(medlowquar == 1)
+highlad <- hhpart4 %>% 
+   filter(!is.na(lowquar), is.na(medlowquar))
+summary(highlad$lowquar)
+highladnosocial <- highlad %>% 
+  filter(tenure != "social")
 lowlad <- hhpart4 %>% 
-  filter(!is.na(lowquar), is.na(medlowquar))
+  filter(medlowquar == 1)
+summary(lowlad$lowquar)
+lowladnosocial <- lowlad %>% 
+  filter(tenure != "social")
 
 # Housing crisis
 precrisis <- hhpart4 %>% filter(period == "1992-1999" | period == "2000-2007")
 postcrisis <- hhpart4 %>% filter(period == "2008-2012" | period == "2013-2022")
 
-# DF for parity specific models
-hhpart4p1 <- hhpart4 %>% filter(parity == 1)
-hhpart4p2 <- hhpart4 %>% filter(parity == 2)
+
 
 # -------------------------------------------------------------------------
 # Categorical Variable Tests ----------------------------------------------
@@ -136,7 +150,10 @@ anova(wald, wald3, test = "LRT")
 
 ## LAD
 ### f1highlad = f1 with only LAD with housing above the median low quartile home price
-### f1lowlad = f1 with only LAD with housing above the median low quartile home price
+### f1highladnosocial = f1 with only LAD with housing above the median lower quartile home price not including social housing
+### f1lowlad = f1 with only LAD with housing under the median low quartile home price
+### f1lowladnosocial = f1 with only LAD with housing under the median lower quartile home price not including social housing
+
 
 ##Crisis
 ### f1precrisis = f1 with only precrisis observations (aka BHPS)
@@ -175,14 +192,14 @@ cat_plot(f1, pred = parity, modx = ratio_cat3, mod2 = tenure,
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
-         main.title = "Full model - by housing type",
+         main.title = "",
          legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 cat_plot(f1, pred = parity, modx = ratio_cat3,
          point.size = 2,
@@ -203,7 +220,7 @@ cat_plot(f1, pred = parity, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1_parity_full_S14_20-03-2023.png", dpi = 500)
+ggsave("f1_parity_full_s15_20-03-2023.png", dpi = 500)
 
 
 #analysis f2
@@ -229,7 +246,7 @@ cat_plot(f2, pred = parity, modx = ratio_cat3, mod2 = hhemp,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          mod2.values = c("bothemp", "egoinactive", "egoemp", "bothunemp", "egounemp"),
          mod2.labels = c("Both Employed", "Woman Inactive", "Woman Emp., Man Not", "Both Unemployed", "Woman Unemployed"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
@@ -242,7 +259,7 @@ cat_plot(f2, pred = parity, modx = ratio_cat3, mod2 = hhemp,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f2_parity_hhemp_S14_20-03-2023.png", dpi = 500)
+ggsave("f2_parity_hhemp_s15_20-03-2023.png", dpi = 500)
 
 
 # -------------------------------------------------------------------------
@@ -287,7 +304,7 @@ cat_plot(p1f1, pred = tenure, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("p1f1_p1_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("p1f1_p1_tenure_s15_20-03-2023.png", dpi = 500)
 
 #analysis p1f2
 p1f2 <- glmer(formula = event ~ clock + ratio_cat3*hhemp + period + age_cat + agesq + edu + ukborn + tenure
@@ -325,7 +342,7 @@ cat_plot(p1f2, pred = hhemp, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("p1f2_p1_hhemp_S14_20-03-2023.png", dpi = 500)
+ggsave("p1f2_p1_hhemp_s15_20-03-2023.png", dpi = 500)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -368,7 +385,7 @@ cat_plot(p2f1, pred = tenure, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("p2f1_p1_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("p2f1_p1_tenure_s15_20-03-2023.png", dpi = 500)
 
 #analysis p2f2
 p2f2 <- glmer(formula = event ~ clock + ratio_cat3*hhemp + period + age_cat + agesq + edu + ukborn + tenure
@@ -404,7 +421,7 @@ cat_plot(p2f2, pred = hhemp, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("p2f2_p1_hhemp_S14_20-03-2023.png", dpi = 500)
+ggsave("p2f2_p1_hhemp_s15_20-03-2023.png", dpi = 500)
 
 
 #Categorical
@@ -436,7 +453,8 @@ parity_output <- list(p1f1, p1f2, p2f1, p2f2)
 #             "edumedium" = "Medium",
 #             "ukborn1" = "UK Born")
 parity <- modelsummary(parity_output, output = "huxtable", exponentiate = TRUE, stars = TRUE)
-quick_html(parity, file = "parity_S14_14-02-2023.html", open = FALSE)
+quick_html(parity, file = "parity_s15_21-03-2023.html", open = FALSE)
+quick_xlsx(parity, file = "parity_s15_21-03-2023.xlsx", open = FALSE)
 
 
 
@@ -475,7 +493,7 @@ cat_plot(f1u29, pred = parity, modx = ratio_cat3, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -486,7 +504,7 @@ cat_plot(f1u29, pred = parity, modx = ratio_cat3, mod2 = tenure,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1u29_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1u29_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 cat_plot(f1u29, pred = parity, modx = ratio_cat3,
          point.size = 2,
@@ -496,7 +514,7 @@ cat_plot(f1u29, pred = parity, modx = ratio_cat3,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -507,7 +525,7 @@ cat_plot(f1u29, pred = parity, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1u29_parity_S14_20-03-2023.png", dpi = 500)
+ggsave("f1u29_parity_s15_20-03-2023.png", dpi = 500)
 
 
 
@@ -535,7 +553,7 @@ cat_plot(f1o30, pred = parity, modx = ratio_cat3, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -546,7 +564,7 @@ cat_plot(f1o30, pred = parity, modx = ratio_cat3, mod2 = tenure,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1o30_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1o30_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 #All housing
 cat_plot(f1o30, pred = parity, modx = ratio_cat3,
@@ -557,7 +575,7 @@ cat_plot(f1o30, pred = parity, modx = ratio_cat3,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -568,7 +586,7 @@ cat_plot(f1o30, pred = parity, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1o30_parity_S14_20-03-2023.png", dpi = 500)
+ggsave("f1o30_parity_s15_20-03-2023.png", dpi = 500)
 
 
 
@@ -578,7 +596,7 @@ ggsave("f1o30_parity_S14_20-03-2023.png", dpi = 500)
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 ### f1umedinc = f1 with observations under yearly median hh income
-f1umedinc <- glmer(formula = event ~ clock*parity + ratio_cat3*parity + tenure + period + age_cat + agesq + edu + ukborn + hhemp
+f1umedinc <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp
                    + (1|pidp) + (1|code),
                    data = umedinc,
                    family = binomial,
@@ -592,7 +610,7 @@ saveRDS(f1umedinc,"f1umedinc.rds")
 # mf1umedinc <- margins(f1umedinc)
 # summary(mf1umedinc)
 
-cat_plot(f1umedinc, pred = parity, modx = ratio_cat3,
+cat_plot(f1umedinc, pred = parity, modx = ratio_cat3, mod2 = tenure,
          point.size = 2,
          line.thickness = 0.8,
          geom.alpha = 1,
@@ -600,7 +618,7 @@ cat_plot(f1umedinc, pred = parity, modx = ratio_cat3,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -611,7 +629,28 @@ cat_plot(f1umedinc, pred = parity, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1umedinc_parity_S14_20-03-2023.png", dpi = 500)
+ggsave("f1umedinc_tenure_s15_20-03-2023.png", dpi = 500)
+
+cat_plot(f1umedinc, pred = parity, modx = ratio_cat3, 
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Under the median income",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1umedinc_parity_s15_20-03-2023.png", dpi = 500)
 
 
 ### f1omedinc = f1 with observations equal to or over yearly median hh income
@@ -637,7 +676,7 @@ cat_plot(f1omedinc, pred = parity, modx = ratio_cat3, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -648,7 +687,7 @@ cat_plot(f1omedinc, pred = parity, modx = ratio_cat3, mod2 = tenure,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1omedinc_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1omedinc_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 cat_plot(f1omedinc, pred = parity, modx = ratio_cat3,
          point.size = 2,
@@ -656,9 +695,9 @@ cat_plot(f1omedinc, pred = parity, modx = ratio_cat3,
          geom.alpha = 1,
          dodge.width = 0.4,
          errorbar.width = 0.25,
-         modx.values = c("0", "0.1-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
-         modx.labels = c("0%", "0.1-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -669,7 +708,7 @@ cat_plot(f1omedinc, pred = parity, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1omedinc_parity_S14_20-03-2023.png", dpi = 500)
+ggsave("f1omedinc_parity_s15_20-03-2023.png", dpi = 500)
 
 
 
@@ -702,7 +741,7 @@ cat_plot(f1urban, pred = parity, modx = ratio_cat3, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -713,7 +752,7 @@ cat_plot(f1urban, pred = parity, modx = ratio_cat3, mod2 = tenure,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1urban_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1urban_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 cat_plot(f1urban, pred = parity, modx = ratio_cat3,
          point.size = 2,
@@ -723,7 +762,7 @@ cat_plot(f1urban, pred = parity, modx = ratio_cat3,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -734,7 +773,7 @@ cat_plot(f1urban, pred = parity, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1urban_parity_S14_20-03-2023.png", dpi = 500)
+ggsave("f1urban_parity_s15_20-03-2023.png", dpi = 500)
 
 ### f1rural = f1 with only rural observations
 f1rural <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
@@ -759,7 +798,7 @@ cat_plot(f1rural, pred = parity, modx = ratio_cat3, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -770,7 +809,7 @@ cat_plot(f1rural, pred = parity, modx = ratio_cat3, mod2 = tenure,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1rural_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1rural_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 cat_plot(f1rural, pred = parity, modx = ratio_cat3,
          point.size = 2,
@@ -780,7 +819,7 @@ cat_plot(f1rural, pred = parity, modx = ratio_cat3,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -791,7 +830,7 @@ cat_plot(f1rural, pred = parity, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1rural_parity_S14_20-03-2023.png", dpi = 500)
+ggsave("f1rural_parity_s15_20-03-2023.png", dpi = 500)
 
 
 
@@ -824,18 +863,18 @@ cat_plot(f1highlad, pred = parity, modx = ratio_cat3, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
-         main.title = "Only LAD with housing prices over the median lower quartile by housing type",
+         main.title = "highlad: Only LAD with housing prices over the median lower quartile by housing type",
          legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1highlad_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1highlad_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 cat_plot(f1highlad, pred = parity, modx = ratio_cat3,
          point.size = 2,
@@ -845,22 +884,63 @@ cat_plot(f1highlad, pred = parity, modx = ratio_cat3,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
-         main.title = "Only LAD with housing prices over the median lower quartile",
+         main.title = "highlad: Only LAD with housing prices over the median lower quartile",
          legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1highlad_parity_S14_20-03-2023.png", dpi = 500)
+ggsave("f1highlad_parity_s15_20-03-2023.png", dpi = 500)
 
 
-### f1lowload = f1 with only LAD with housing above the median low quartile home price
-f1lowload <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+
+### f1highladnosocial = f1 dropped social housing to see details
+f1highladnosocial <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+                   + (1|pidp) + (1|code),
+                   data = highladnosocial,
+                   family = binomial,
+                   control = glmerControl(optimizer = "bobyqa",
+                                          optCtrl = list(maxfun = 2e5)),
+                   weights = weight) 
+
+summary(f1highladnosocial)
+summ(f1highladnosocial, exp = TRUE)
+saveRDS(f1highladnosocial,"f1highladnosocial.rds")
+# mf1highlad <- margins(f1highlad)
+# summary(mf1highlad)
+
+cat_plot(f1highladnosocial, pred = parity, modx = ratio_cat3, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "highlad: Only LAD with housing prices over the median lower quartile by housing type",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1highladnosocial_parity_tenure_s15_20-03-2023.png", dpi = 500)
+
+
+
+
+### f1lowlad = f1 with only LAD with housing above the median low quartile home price
+
+f1lowlad <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
                    + (1|pidp) + (1|code),
                    data = lowlad,
                    family = binomial,
@@ -868,13 +948,13 @@ f1lowload <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + p
                                           optCtrl = list(maxfun = 2e5)),
                    weights = weight) 
 
-summary(f1lowload)
-summ(f1lowload, exp = TRUE)
-saveRDS(f1lowload,"f1lowload.rds")
-# mf1lowload <- margins(f1lowload)
-# summary(mf1lowload)
+summary(f1lowlad)
+summ(f1lowlad, exp = TRUE)
+saveRDS(f1lowlad,"f1lowlad.rds")
+# mf1lowlad <- margins(f1lowlad)
+# summary(mf1lowlad)
 
-cat_plot(f1lowload, pred = parity, modx = ratio_cat3, mod2 = tenure,
+cat_plot(f1lowlad, pred = parity, modx = ratio_cat3, mod2 = tenure,
          point.size = 2,
          line.thickness = 0.8,
          geom.alpha = 1,
@@ -882,20 +962,20 @@ cat_plot(f1lowload, pred = parity, modx = ratio_cat3, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
-         main.title = "Only LAD with housing prices under the median lower quartile by housing type",
+         main.title = "lowlad: Only LAD with housing prices under the median lower quartile by housing type",
          legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1lowload_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1lowlad_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
-cat_plot(f1lowload, pred = parity, modx = ratio_cat3,
+cat_plot(f1lowlad, pred = parity, modx = ratio_cat3,
          point.size = 2,
          line.thickness = 0.8,
          geom.alpha = 1,
@@ -903,18 +983,56 @@ cat_plot(f1lowload, pred = parity, modx = ratio_cat3,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
-         main.title = "Only LAD with housing prices under the median lower quartile",
+         main.title = "lowlad: Only LAD with housing prices under the median lower quartile",
          legend.main = "Proportion of household income dedicated to housing expenditure",
          colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
   theme_bw() +
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1lowload_parity_S14_20-03-2023.png", dpi = 500)
+ggsave("f1lowlad_parity_s15_20-03-2023.png", dpi = 500)
+
+
+f1lowladnosocial <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+                           + (1|pidp) + (1|code),
+                           data = lowladnosocial,
+                           family = binomial,
+                           control = glmerControl(optimizer = "bobyqa",
+                                                  optCtrl = list(maxfun = 2e5)),
+                           weights = weight) 
+
+summary(f1lowladnosocial)
+summ(f1lowladnosocial, exp = TRUE)
+saveRDS(f1lowladnosocial,"f1lowladnosocial.rds")
+# mf1lowlad <- margins(f1lowlad)
+# summary(mf1lowlad)
+
+
+
+cat_plot(f1lowladnosocial, pred = parity, modx = ratio_cat3, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "lowlad: Only LAD with housing prices under the median lower quartile by housing type",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1lowladnosocial_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 
 
@@ -947,7 +1065,7 @@ cat_plot(f1precrisis, pred = parity, modx = ratio_cat3, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -958,7 +1076,7 @@ cat_plot(f1precrisis, pred = parity, modx = ratio_cat3, mod2 = tenure,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1precrisis_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1precrisis_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 cat_plot(f1precrisis, pred = parity, modx = ratio_cat3,
          point.size = 2,
@@ -968,7 +1086,7 @@ cat_plot(f1precrisis, pred = parity, modx = ratio_cat3,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -979,7 +1097,7 @@ cat_plot(f1precrisis, pred = parity, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1precrisis_parity__S14_20-03-2023.png", dpi = 500)
+ggsave("f1precrisis_parity__s15_20-03-2023.png", dpi = 500)
 
 ### f1postcrisis = f1 with only postcrisis observations (aka UKHLS)
 f1postcrisis <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + age_cat + agesq + edu + ukborn + hhemp 
@@ -1004,7 +1122,7 @@ cat_plot(f1postcrisis, pred = parity, modx = ratio_cat3, mod2 = tenure,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -1015,7 +1133,7 @@ cat_plot(f1postcrisis, pred = parity, modx = ratio_cat3, mod2 = tenure,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1postcrisis_parity_tenure_S14_20-03-2023.png", dpi = 500)
+ggsave("f1postcrisis_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 
 cat_plot(f1postcrisis, pred = parity, modx = ratio_cat3,
@@ -1026,7 +1144,7 @@ cat_plot(f1postcrisis, pred = parity, modx = ratio_cat3,
          errorbar.width = 0.25,
          modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
          modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
-         pred.labels = c("First birth", "Second birth", "Third birth"),
+         pred.labels = c("First birth", "Second birth"),
          # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
          x.label = "",
          y.label = "Pr(Experencing a Live Birth)",
@@ -1037,4 +1155,4 @@ cat_plot(f1postcrisis, pred = parity, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("f1postcrisis_parity_S14_20-03-2023.png", dpi = 500)
+ggsave("f1postcrisis_parity_s15_20-03-2023.png", dpi = 500)

@@ -42,7 +42,14 @@ hhpart3 %>% tabyl(age_cat2, tenure, period) %>%
 
 # DF for removing parity 3
 hhpart4 <- hhpart3 %>% 
-  dplyr::filter(parity != 3)
+  dplyr::filter(parity != 3) %>% 
+  mutate(event.chr = as.character(event), #For descriptive stats
+         crisis = case_when(period == "1991-1999" | period == "2000-2007" ~ "pre",
+                            period == "2008-2012" | period == "2013-2022" ~ "post"),
+         medlowquar = ifelse(!is.na(lowquar) & is.na(medlowquar), 0, medlowquar),
+         medlad = case_when(medlowquar == 0 ~ "high",
+                            medlowquar == 1 ~ "low"),
+         hhemp2 = fct_relevel(hhemp, c("bothemp", "egoinactive", "egoemp",  "bothunemp", "egounemp")))
 
 hhpart4 %>% count(ratio_cat3)
 
@@ -204,7 +211,57 @@ write2html(hhpart4stats, "hhpart4stats_parity_20-03-2023.html") #UPDATE DATE
 write2word(hhpart4stats, "hhpart4stats_parity_20-03-2023.docx") #UPDATE DATE
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Who are the partnered households with parents?
+# Table A2 Subsample stats ------------------------------------------------
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#Urban
+mycontrols <- tableby.control(test = FALSE)
+urbanstats <-arsenal::tableby(urban ~ event.chr + ratio_cat3 + tenure +  hhemp2, 
+                                data = hhpart4, 
+                                weights = weight,
+                                control = mycontrols)
+
+summary(urbanstats)
+write2html(urbanstats, "urbanstats_parity_22-03-2023.html") #UPDATE DATE
+write2word(urbanstats, "urbanstats_parity_22-03-2023.docx") #UPDATE DATE
+
+#Medinc
+mycontrols <- tableby.control(test = FALSE)
+medincstats <-arsenal::tableby(medinc ~ event.chr + ratio_cat3 + tenure +  hhemp2, 
+                              data = hhpart4, 
+                              weights = weight,
+                              control = mycontrols)
+
+summary(medincstats)
+write2html(medincstats, "medincstats_parity_22-03-2023.html") #UPDATE DATE
+write2word(medincstats, "medincstats_parity_22-03-2023.docx") #UPDATE DATE
+
+#LAD
+mycontrols <- tableby.control(test = FALSE)
+ladstats <-arsenal::tableby(medlad ~ event.chr + ratio_cat3 + tenure +  hhemp2, 
+                               data = hhpart4, 
+                               weights = weight,
+                               control = mycontrols)
+
+summary(ladstats)
+write2html(ladstats, "ladstats_parity_22-03-2023.html") #UPDATE DATE
+write2word(ladstats, "ladstats_parity_22-03-2023.docx") #UPDATE DATE
+
+#crisis
+mycontrols <- tableby.control(test = FALSE)
+crisisstats <-arsenal::tableby(crisis ~ event.chr + ratio_cat3 + tenure +  hhemp2, 
+                            data = hhpart4, 
+                            weights = weight,
+                            control = mycontrols)
+
+summary(crisisstats)
+write2html(crisisstats, "crisisstats_parity_22-03-2023.html") #UPDATE DATE
+write2word(crisisstats, "crisisstats_parity_22-03-2023.docx") #UPDATE DATE
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Who are the partnered households with parents? --------------------------
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 lwp <- hhpart %>% #lwp = livewithparents
   dplyr::filter(partner != "single", parenthh == 1) #2230 individuals
 

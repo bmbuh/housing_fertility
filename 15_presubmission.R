@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 20.03.2023 
-#Last Updated: 21.03.2023
+#Last Updated: 22.03.2023
 
 ## After analyzing the feedback from MWD and the colloquium I have made the following decisions for the manuscript:
 # 1. Drop overcrowding and mediation analysis
@@ -44,8 +44,16 @@ hhpart3 <- hhpart2 %>%
 
 # DF for removing parity 3
 hhpart4 <- hhpart3 %>% 
-  dplyr::filter(parity != 3)
+  dplyr::filter(parity != 3) %>% 
+  mutate(event.chr = as.character(event), #For descriptive stats
+         crisis = case_when(period == "1991-1999" | period == "2000-2007" ~ "pre",
+                            period == "2008-2012" | period == "2013-2022" ~ "post"),
+         medlowquar = ifelse(!is.na(lowquar) & is.na(medlowquar), 0, medlowquar),
+         medlad = case_when(medlowquar == 0 ~ "high",
+                            medlowquar == 1 ~ "low"),
+         hhemp2 = fct_relevel(hhemp, c("bothemp", "egoinactive", "egoemp",  "bothunemp", "egounemp")))
 
+hhpart4 %>% count(hhemp)
 # DF for parity specific models
 hhpart4p1 <- hhpart4 %>% filter(parity == 1)
 hhpart4p2 <- hhpart4 %>% filter(parity == 2)
@@ -54,23 +62,36 @@ hhpart4p2 <- hhpart4 %>% filter(parity == 2)
 # Heterogeneity testing df
 ## Age
 u29 <- hhpart4 %>% filter(age_cat2 == "u29")
-u29 %>% count(ratio_cat3)
+u29 %>% tabyl(ratio_cat3)
+u29 %>% tabyl(event, parity)
 o30 <- hhpart4 %>% filter(age_cat2 == "o30")
-o30 %>% count(ratio_cat3)
+o30 %>% tabyl(ratio_cat3)
+o30 %>% tabyl(event, parity)
+
 
 ## Income
 umedinc <- hhpart4 %>% filter(medinc == 1)
-umedinc %>% count(ratio_cat3)
-umedinc %>% tabyl(tenure)
-summary(umedinc$hhinc)
+umedinc %>% tabyl(ratio_cat3) #They spend way more then high income hh
+umedinc %>% tabyl(tenure) #way more private rent for under median income
+summary(umedinc$hhinc) #correct
+umedincnosocial <- hhpart4 %>% filter(medinc == 1, tenure != "social")
+umedincnosocial %>% count(tenure)
 omedinc <- hhpart4 %>% filter(medinc == 0)
-omedinc %>% count(ratio_cat3)
-omedinc %>% tabyl(tenure)
-summary(omedinc$hhinc)
+omedinc %>% tabyl(ratio_cat3) #They spend way less then lower income hh
+omedinc %>% tabyl(tenure) #way more homeowners
+summary(omedinc$hhinc) #coreect
+omedincnosocial <- hhpart4 %>% filter(medinc == 0, tenure != "social")
+omedincnosocial %>% count(tenure) #coreect
 
 #Urban/rural
 urban <- hhpart4 %>% filter(urban == 1)
+urban %>% tabyl(ratio_cat3)
+urban %>% tabyl(tenure)
+urbannosocial <- urban %>% filter(tenure != "social")
 rural <- hhpart4 %>% filter(urban == 2)
+rural %>% tabyl(ratio_cat3)
+rural %>% tabyl(tenure)
+ruralnosocial <- rural %>% filter(tenure != "social")
 
 # High Price LAD
 highlad <- hhpart4 %>% 
@@ -85,10 +106,21 @@ lowladnosocial <- lowlad %>%
   filter(tenure != "social")
 
 # Housing crisis
-precrisis <- hhpart4 %>% filter(period == "1992-1999" | period == "2000-2007")
+precrisis <- hhpart4 %>% filter(period == "1991-1999" | period == "2000-2007")
+precrisis %>% tabyl(ratio_cat3)
+precrisis %>% tabyl(tenure)
+precrisis %>% tabyl(period)
+
 postcrisis <- hhpart4 %>% filter(period == "2008-2012" | period == "2013-2022")
+postcrisis %>% tabyl(ratio_cat3)
+postcrisis %>% tabyl(tenure)
+postcrisis %>% tabyl(period)
 
 
+posthighlad <- postcrisis %>% filter(!is.na(lowquar), is.na(medlowquar)) %>% filter(tenure != "social")
+summary(posthighlad$lowquar)
+postlowlad <- postcrisis %>% filter(medlowquar == 1) %>% filter(tenure != "social")
+summary(postlowlad$lowquar)
 
 # -------------------------------------------------------------------------
 # Categorical Variable Tests ----------------------------------------------
@@ -142,11 +174,17 @@ anova(wald, wald3, test = "LRT")
 
 ## Income-level
 ### f1umedinc = f1 with observations under yearly median hh income
+### f1umedincnosocial = f1 with observations under yearly median hh income - no social
 ### f1omedinc = f1 with observations equal to or over yearly median hh income
+### f1omedincnosocial = f1 with observations equal to or over yearly median hh income - no social
+
 
 ## Urban/rural
 ### f1urban = f1 with only urban observations
+### f1urbannosocial = f1 with only urban observations - no social housing
 ### f1rural = f1 with only rural observations
+### f1ruralnosocial = f1 with only rural observations - no social housing
+
 
 ## LAD
 ### f1highlad = f1 with only LAD with housing above the median low quartile home price
@@ -157,8 +195,10 @@ anova(wald, wald3, test = "LRT")
 
 ##Crisis
 ### f1precrisis = f1 with only precrisis observations (aka BHPS)
-### f1postcrisis = f1 with only postcrisis observations (aka UKHLS)
 
+### f1postcrisis = f1 with only postcrisis observations (aka UKHLS)
+### f1posthighlad - f1 postcrisis on LAD above the median lower quartile housing price - no social
+### f1postlowlad - f1 postcrisis on LAD below the median lower quartile housing price - no social
 
 # -------------------------------------------------------------------------
 # Full Analysis -----------------------------------------------------------
@@ -385,7 +425,7 @@ cat_plot(p2f1, pred = tenure, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("p2f1_p1_tenure_s15_20-03-2023.png", dpi = 500)
+ggsave("p2f1_p2_tenure_s15_20-03-2023.png", dpi = 500)
 
 #analysis p2f2
 p2f2 <- glmer(formula = event ~ clock + ratio_cat3*hhemp + period + age_cat + agesq + edu + ukborn + tenure
@@ -421,7 +461,7 @@ cat_plot(p2f2, pred = hhemp, modx = ratio_cat3,
   theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
-ggsave("p2f2_p1_hhemp_s15_20-03-2023.png", dpi = 500)
+ggsave("p2f2_p2_hhemp_s15_20-03-2023.png", dpi = 500)
 
 
 #Categorical
@@ -653,6 +693,41 @@ cat_plot(f1umedinc, pred = parity, modx = ratio_cat3,
 ggsave("f1umedinc_parity_s15_20-03-2023.png", dpi = 500)
 
 
+### f1umedincnosocial = f1 with only umedinc observations
+f1umedincnosocial <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+                           + (1|pidp) + (1|code),
+                           data = umedincnosocial,
+                           family = binomial,
+                           control = glmerControl(optimizer = "bobyqa",
+                                                  optCtrl = list(maxfun = 2e5)),
+                           weights = weight) 
+
+summary(f1umedincnosocial)
+summ(f1umedincnosocial, exp = TRUE)
+saveRDS(f1umedincnosocial,"f1umedincnosocial.rds")
+
+cat_plot(f1umedincnosocial, pred = parity, modx = ratio_cat3, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Under the median income - no social housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1umedincnosocial_parity_tenure_s15_20-03-2023.png", dpi = 500)
+
+
 ### f1omedinc = f1 with observations equal to or over yearly median hh income
 f1omedinc <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
                    + (1|pidp) + (1|code),
@@ -710,7 +785,39 @@ cat_plot(f1omedinc, pred = parity, modx = ratio_cat3,
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
 ggsave("f1omedinc_parity_s15_20-03-2023.png", dpi = 500)
 
+### f1omedincnosocial = f1 with only omedinc observations
+f1omedincnosocial <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+                         + (1|pidp) + (1|code),
+                         data = omedincnosocial,
+                         family = binomial,
+                         control = glmerControl(optimizer = "bobyqa",
+                                                optCtrl = list(maxfun = 2e5)),
+                         weights = weight) 
 
+summary(f1omedincnosocial)
+summ(f1omedincnosocial, exp = TRUE)
+saveRDS(f1omedincnosocial,"f1omedincnosocial.rds")
+
+cat_plot(f1omedincnosocial, pred = parity, modx = ratio_cat3, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Over the median income - no social housing",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1omedincnosocial_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 
 
@@ -775,6 +882,40 @@ cat_plot(f1urban, pred = parity, modx = ratio_cat3,
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
 ggsave("f1urban_parity_s15_20-03-2023.png", dpi = 500)
 
+### f1urbannosocial = f1 with only urban observations
+f1urbannosocial <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+                 + (1|pidp) + (1|code),
+                 data = urbannosocial,
+                 family = binomial,
+                 control = glmerControl(optimizer = "bobyqa",
+                                        optCtrl = list(maxfun = 2e5)),
+                 weights = weight) 
+
+summary(f1urbannosocial)
+summ(f1urbannosocial, exp = TRUE)
+saveRDS(f1urbannosocial,"f1urbannosocial.rds")
+
+cat_plot(f1urbannosocial, pred = parity, modx = ratio_cat3, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Urban by housing type",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1urbannosocial_parity_tenure_s15_20-03-2023.png", dpi = 500)
+
 ### f1rural = f1 with only rural observations
 f1rural <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
                  + (1|pidp) + (1|code),
@@ -833,7 +974,39 @@ cat_plot(f1rural, pred = parity, modx = ratio_cat3,
 ggsave("f1rural_parity_s15_20-03-2023.png", dpi = 500)
 
 
+### f1ruralnosocial = f1 with only rural observations
+f1ruralnosocial <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + period + age_cat + agesq + edu + ukborn + hhemp 
+                         + (1|pidp) + (1|code),
+                         data = ruralnosocial,
+                         family = binomial,
+                         control = glmerControl(optimizer = "bobyqa",
+                                                optCtrl = list(maxfun = 2e5)),
+                         weights = weight) 
 
+summary(f1ruralnosocial)
+summ(f1ruralnosocial, exp = TRUE)
+saveRDS(f1ruralnosocial,"f1ruralnosocial.rds")
+
+cat_plot(f1ruralnosocial, pred = parity, modx = ratio_cat3, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "rural by housing type - no social",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1ruralnosocial_parity_tenure_s15_20-03-2023.png", dpi = 500)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1156,3 +1329,112 @@ cat_plot(f1postcrisis, pred = parity, modx = ratio_cat3,
         axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
         legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
 ggsave("f1postcrisis_parity_s15_20-03-2023.png", dpi = 500)
+
+
+### f1postcrisis = f1 with only postcrisis observations (aka UKHLS)
+f1postcrisis <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + age_cat + agesq + edu + ukborn + hhemp 
+                      + (1|pidp) + (1|code),
+                      data = postcrisis,
+                      family = binomial,
+                      control = glmerControl(optimizer = "bobyqa",
+                                             optCtrl = list(maxfun = 2e5)),
+                      weights = weight) 
+
+summary(f1postcrisis)
+summ(f1postcrisis, exp = TRUE)
+saveRDS(f1postcrisis,"f1postcrisis.rds")
+# mf1postcrisis <- margins(f1postcrisis)
+# summary(mf1postcrisis)
+
+cat_plot(f1postcrisis, pred = parity, modx = ratio_cat3, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Post crisis by housing type",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1postcrisis_parity_tenure_s15_20-03-2023.png", dpi = 500)
+
+### f1posthighlad = f1 with only postcrisis observations (aka UKHLS)
+f1posthighlad <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + age_cat + agesq + edu + ukborn + hhemp 
+                      + (1|pidp) + (1|code),
+                      data = posthighlad,
+                      family = binomial,
+                      control = glmerControl(optimizer = "bobyqa",
+                                             optCtrl = list(maxfun = 2e5)),
+                      weights = weight) 
+
+summary(f1posthighlad)
+summ(f1posthighlad, exp = TRUE)
+saveRDS(f1posthighlad,"f1posthighlad.rds")
+# mf1posthighlad <- margins(f1posthighlad)
+# summary(mf1posthighlad)
+
+cat_plot(f1posthighlad, pred = parity, modx = ratio_cat3, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Post crisis by housing type- High LAD no social",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1posthighlad_parity_tenure_s15_20-03-2023.png", dpi = 500)
+
+### f1postlowlad = f1 with only postcrisis observations (aka UKHLS)
+f1postlowlad <- glmer(formula = event ~ clock*parity + ratio_cat3*parity*tenure + age_cat + agesq + edu + ukborn + hhemp 
+                      + (1|pidp) + (1|code),
+                      data = postlowlad,
+                      family = binomial,
+                      control = glmerControl(optimizer = "bobyqa",
+                                             optCtrl = list(maxfun = 2e5)),
+                      weights = weight) 
+
+summary(f1postlowlad)
+summ(f1postlowlad, exp = TRUE)
+saveRDS(f1postlowlad,"f1postlowlad.rds")
+# mf1postlowlad <- margins(f1postlowlad)
+# summary(mf1postlowlad)
+
+cat_plot(f1postlowlad, pred = parity, modx = ratio_cat3, mod2 = tenure,
+         point.size = 2,
+         line.thickness = 0.8,
+         geom.alpha = 1,
+         dodge.width = 0.4,
+         errorbar.width = 0.25,
+         modx.values = c("0-10", "10-20", "20-30", "30-40", "40-100"), #For ratio_cat3
+         modx.labels = c("0-10%", "10-20%", "20-30%", "30-40%", "40-100%"),
+         pred.labels = c("First birth", "Second birth"),
+         # mod2.labels = c("1992-1999", "2000-2007",  "2008-2012", "2013-2021"),
+         x.label = "",
+         y.label = "Pr(Experencing a Live Birth)",
+         main.title = "Post crisis by housing type - low LAD - no social",
+         legend.main = "Proportion of household income dedicated to housing expenditure",
+         colors = c("#a3D4E0", "#75BFD1", "#3892A8", "#2E778A", "#1F505C")) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 15, vjust = 0.1), legend.title = element_text(size = 15), axis.title.y = element_text(size = 15),
+        legend.text = element_text(size = 15), strip.text.x = element_text(size = 15))
+ggsave("f1postlowlad_parity_tenure_s15_20-03-2023.png", dpi = 500)

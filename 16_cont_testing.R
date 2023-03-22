@@ -38,7 +38,14 @@ hhpart3 <- hhpart2 %>%
 
 # DF for removing parity 3
 hhpart4 <- hhpart3 %>% 
-  dplyr::filter(parity != 3)
+  dplyr::filter(parity != 3) %>% 
+  mutate(event.chr = as.character(event), #For descriptive stats
+         crisis = case_when(period == "1991-1999" | period == "2000-2007" ~ "pre",
+                            period == "2008-2012" | period == "2013-2022" ~ "post"),
+         medlowquar = ifelse(!is.na(lowquar) & is.na(medlowquar), 0, medlowquar),
+         medlad = case_when(medlowquar == 0 ~ "high",
+                            medlowquar == 1 ~ "low"),
+         hhemp2 = fct_relevel(hhemp, c("bothemp", "egoinactive", "egoemp",  "bothunemp", "egounemp")))
 
 hhpart4 %>% count(ratio_cat3)
 
@@ -65,6 +72,7 @@ lowlad <- hhpart4 %>%
 # Housing crisis
 precrisis <- hhpart4 %>% filter(period == "1992-1999" | period == "2000-2007")
 postcrisis <- hhpart4 %>% filter(period == "2008-2012" | period == "2013-2022")
+
 
 # DF for parity specific models
 hhpart4p1 <- hhpart4 %>% filter(parity == 1)
@@ -570,4 +578,42 @@ saveRDS(g1postcrisis,"g1postcrisis.rds")
 effect_plot(g1postcrisis, pred = ratio,
             interval = TRUE,
             main.title = "postcrisis")
+
+### g1postcrisis = g1 with only postcrisis observations (aka UKHLS)
+g1posthighlad <- glmer(formula = event ~ clock*parity + ratio*parity*tenure + age_cat + agesq + edu + ukborn + hhemp 
+                      + (1|pidp) + (1|code),
+                      data = posthighlad,
+                      family = binomial,
+                      control = glmerControl(optimizer = "bobyqa",
+                                             optCtrl = list(maxfun = 2e5)),
+                      weights = weight) 
+
+summary(g1posthighlad)
+summ(g1posthighlad, exp = TRUE)
+saveRDS(g1posthighlad,"g1posthighlad.rds")
+# mg1posthighlad <- margins(g1posthighlad)
+# summary(mg1posthighlad)
+
+effect_plot(g1posthighlad, pred = ratio,
+            interval = TRUE,
+            main.title = "posthighlad")
+
+### g1postlowlad = g1 with only postlowlad observations (aka UKHLS)
+g1postlowlad <- glmer(formula = event ~ clock*parity + ratio*parity*tenure + age_cat + agesq + edu + ukborn + hhemp 
+                      + (1|pidp) + (1|code),
+                      data = postlowlad,
+                      family = binomial,
+                      control = glmerControl(optimizer = "bobyqa",
+                                             optCtrl = list(maxfun = 2e5)),
+                      weights = weight) 
+
+summary(g1postlowlad)
+summ(g1postlowlad, exp = TRUE)
+saveRDS(g1postlowlad,"g1postlowlad.rds")
+# mg1postlowlad <- margins(g1postlowlad)
+# summary(mg1postlowlad)
+
+effect_plot(g1postlowlad, pred = ratio,
+            interval = TRUE,
+            main.title = "postlowlad")
 

@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 16.06.2022
-#Last Updated: 14.02.2023 (add partner employment)
+#Last Updated: 16.03.2023 (add urban UKHLS)
 
 library(tidyverse)
 library(haven)
@@ -119,7 +119,7 @@ saveRDS(bhps5, file = "bhps5.rds")
 
 
 ukhlsclean <- indhhukhls %>% 
-  dplyr::select(pidp, wave, hidp, ppid, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, ukborn, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove,
+  dplyr::select(pidp, wave, hidp, ppid, hhorig, istrtdatm, istrtdaty, birthm, birthy, sex, age_dv, ukborn, houscost1_dv, rent, rentgrs_dv, tenure_dv, hsownd, hsrooms, hsbeds, lkmove, urban_dv,
          fihhmnnet3_dv, gor_dv, qfhigh_dv, hiqual_dv, f_qfhighoth, marstat_dv, jbstat, plbornc, hgbiom, hgbiof, hgadoptm, hgadoptf,
          hhsize, plnowm, plnowy4, fimnnet_dv) %>% 
   mutate(rent2 = ifelse(rent < 0, NA, rent),
@@ -366,7 +366,7 @@ test2 %>% count(wavegap, obsnum)
 #This df filters individuals with clock errors
 cball2 <- cball1 %>% 
   left_join(., filterna1, by = c("pidp", "wave")) %>% 
-  left_join(., weights, by = c("pidp", "wave")) %>% 
+  left_join(., weights, by = c("pidp", "wave")) %>% #Add the df "Weights"
   group_by(pidp) %>% 
   mutate(clockneg = ifelse(clock < 0, 1, NA),
          clockpos = ifelse(clock > 27, 1, NA),
@@ -464,7 +464,7 @@ clockparitycheck <- cball2 %>% count(clock, event, parity)
 # Adding LAD --------------------------------------------------------------
 # -------------------------------------------------------------------------
 
-
+#Add "lad_values" df
 cballlad <- cball2 %>% 
   left_join(., lad_values, by = c("hidp", "wave")) %>% 
   dplyr::select(-year.y) %>% 
@@ -478,20 +478,7 @@ cballlad %>% count(is.na(code))
 #After group the NA is reduced to 326
 
 saveRDS(cballlad, file = "cballlad.rds")
-# 
-# 
-# oci <- cballlad %>% 
-#   dplyr::select(pidp, wave, hhsize, hsroom, edu) %>% 
-#   group_by(pidp) %>% 
-#   fill(hsroom, .direction = "downup") %>% 
-#   fill(hhsize, .direction = "downup") %>% 
-#   ungroup() %>% 
-#   # count(hhsize, hsroom) %>% 
-#   mutate(oci = ifelse(hsroom <= hhsize, 1, 0))
-# 
-# oci %>% count(hhsize)
-# test <- oci %>% count(hsroom)
-# oci %>% count(oci, edu)
+
 
 # -------------------------------------------------------------------------
 # Descriptive plots -------------------------------------------------------

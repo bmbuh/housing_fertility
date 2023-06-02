@@ -1,6 +1,6 @@
 #Coded by: Brian Buh
 #Started on: 20.03.2023
-#Last Updated:
+#Last Updated: 26.04.2023
 
 
 library(tidyverse)
@@ -52,6 +52,10 @@ hhpart4 <- hhpart3 %>%
          hhemp2 = fct_relevel(hhemp, c("bothemp", "egoinactive", "egoemp",  "bothunemp", "egounemp")))
 
 hhpart4 %>% count(ratio_cat3)
+
+hhpart4 %>% tabyl(hhemp, tenure)
+
+stats::chisq.test(hhpart4$hhemp, hhpart4$tenure)
 
 # Heterogeneity testing df
 ## Age
@@ -201,7 +205,7 @@ hhpart4p2 %>% tabyl(hhemp) #bothemp = 66.0%, bothunemp = 4.6%, egoemp = 4.5%, eg
 
 #Output
 mycontrols <- tableby.control(test = FALSE)
-hhpart4stats <-arsenal::tableby(parity ~ event + clock + ratio_cat3 + period + tenure + age + partner + edu + ukborn + hhemp, 
+hhpart4stats <-arsenal::tableby(parity ~ event + clock + ratio + period + tenure + age + partner + edu + ukborn + hhemp, 
                             data = hhpart4, 
                             weights = weight,
                             control = mycontrols)
@@ -210,13 +214,17 @@ summary(hhpart4stats)
 write2html(hhpart4stats, "hhpart4stats_parity_20-03-2023.html") #UPDATE DATE
 write2word(hhpart4stats, "hhpart4stats_parity_20-03-2023.docx") #UPDATE DATE
 
+hhpart4 %>% 
+  group_by() %>% 
+  summarise(mean(ratio), sd(ratio))
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Table A2 Subsample stats ------------------------------------------------
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 #Urban
 mycontrols <- tableby.control(test = FALSE)
-urbanstats <-arsenal::tableby(urban ~ event.chr + ratio_cat3 + tenure +  hhemp2, 
+urbanstats <-arsenal::tableby(urban ~ event.chr*parity + ratio + tenure +  hhemp2, 
                                 data = hhpart4, 
                                 weights = weight,
                                 control = mycontrols)
@@ -225,9 +233,14 @@ summary(urbanstats)
 write2html(urbanstats, "urbanstats_parity_22-03-2023.html") #UPDATE DATE
 write2word(urbanstats, "urbanstats_parity_22-03-2023.docx") #UPDATE DATE
 
+hhpart4 %>% 
+  group_by(urban, tenure) %>% 
+  summarise(mean(ratio), sd(ratio))
+
+
 #Medinc
 mycontrols <- tableby.control(test = FALSE)
-medincstats <-arsenal::tableby(medinc ~ event.chr + ratio_cat3 + tenure +  hhemp2, 
+medincstats <-arsenal::tableby(medinc ~ event.chr + ratio + tenure +  hhemp2, 
                               data = hhpart4, 
                               weights = weight,
                               control = mycontrols)
@@ -235,6 +248,11 @@ medincstats <-arsenal::tableby(medinc ~ event.chr + ratio_cat3 + tenure +  hhemp
 summary(medincstats)
 write2html(medincstats, "medincstats_parity_22-03-2023.html") #UPDATE DATE
 write2word(medincstats, "medincstats_parity_22-03-2023.docx") #UPDATE DATE
+
+hhpart4 %>% 
+  group_by(medinc, tenure) %>% 
+  summarise(mean(ratio), sd(ratio))
+
 
 #LAD
 mycontrols <- tableby.control(test = FALSE)
@@ -249,7 +267,7 @@ write2word(ladstats, "ladstats_parity_22-03-2023.docx") #UPDATE DATE
 
 #crisis
 mycontrols <- tableby.control(test = FALSE)
-crisisstats <-arsenal::tableby(crisis ~ event.chr + ratio_cat3 + tenure +  hhemp2, 
+crisisstats <-arsenal::tableby(crisis ~ event.chr + ratio + tenure +  hhemp2, 
                             data = hhpart4, 
                             weights = weight,
                             control = mycontrols)
@@ -257,6 +275,14 @@ crisisstats <-arsenal::tableby(crisis ~ event.chr + ratio_cat3 + tenure +  hhemp
 summary(crisisstats)
 write2html(crisisstats, "crisisstats_parity_22-03-2023.html") #UPDATE DATE
 write2word(crisisstats, "crisisstats_parity_22-03-2023.docx") #UPDATE DATE
+
+hhpart4 %>% 
+  group_by(period, tenure) %>% 
+  summarise(mean(ratio), sd(ratio))
+
+#For body paragraph about rent pre- and post-crisis
+precrisis %>% group_by(tenure, parity) %>% summarise(mean(ratio))
+postcrisis %>% group_by(tenure, parity) %>% summarise(mean(ratio))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Who are the partnered households with parents? --------------------------
@@ -296,8 +322,13 @@ summary(lwpstats)
 write2html(lwpstats, "hhpart_ratio0_16-03-2023.html") #UPDATE DATE
 write2word(lwpstats, "hhpart_ratio0_16-03-2023.docx") #UPDATE DATE
 
+###########################################################################
+# Step 2 - Figures --------------------------------------------------------
+###########################################################################
+
+
 # -------------------------------------------------------------------------
-# Sample Age Dstribution  --------------------------------------------------------
+# Sample Age Distribution  -------------------------------------------------
 # -------------------------------------------------------------------------
 
 hhpart4 %>% 
@@ -448,7 +479,7 @@ hhpart4 %>%
                         "egoemp" = "Woman Employed, Man Not",
                         "egoinactive" = "Woman Inactive",
                         "egounemp" = "Woman Unemployed")) %>% 
-  mutate(hhemp = fct_relevel(hhemp, c("Both Employed", "Both Unemployed",  "Woman Inactive", "Woman Unemployed", "Woman Employed, Man Not"))) %>% 
+  mutate(hhemp = fct_relevel(hhemp, c("Both Employed",   "Woman Inactive", "Woman Employed, Man Not", "Both Unemployed", "Woman Unemployed"))) %>% 
   mutate(ratio_cat = recode(ratio_cat,
                             "0-10" = "0",
                             "10-20" = "10",
@@ -464,7 +495,7 @@ hhpart4 %>%
   summarise(count = n()) %>% 
   mutate(percent = count/sum(count)) %>% 
   ggplot(aes(x = ratio_cat, y = percent)) + 
-  geom_bar(stat = "identity", color = "black", fill = "#3d405b", size = 1) +
+  geom_bar(stat = "identity", color = "black", fill = "#c58d01", size = 1) +
   facet_wrap(~hhemp) +
   theme_bw()+
   scale_x_discrete(breaks = c(0, 20, 40, 60, 80, 100)) +
@@ -477,7 +508,7 @@ hhpart4 %>%
   labs(caption = "") +
   xlab("Percent of net household income going to housing") +
   ylab("Proportion")
-ggsave("ratio_distribution_hhemp_s13_14-02-2023.png", width = 10, height = 10, units = "in", dpi = 500)
+ggsave("ratio_distribution_hhemp_s17_23-03-2023.png", width = 10, height = 10, units = "in", dpi = 500)
 
 
 
@@ -734,4 +765,60 @@ hhpart4 %>%
   xlab("Percent of net household income going to housing") +
   ylab("Proportion")
 ggsave("ratio_distribution_periodsocial_s13_14-02-2023.png", width = 10, height = 10, units = "in", dpi = 500)
+
+
+
+# -------------------------------------------------------------------------
+# Change is spend in years before birth  ----------------------------------
+# -------------------------------------------------------------------------
+
+# Create a data set with lagged housing expenditure and changes from year of birth
+
+hhpart4lag <- hhpart4 %>% 
+  dplyr::select(pidp, wave, event, parity, ratio, tenure, period, crisis) %>% 
+  group_by(pidp) %>% 
+  mutate(lag1 = lag(ratio),
+         lag2 = lag(lag1),
+         lag3 = lag(lag2),
+         tm1 = ratio - lag1,
+         tm2 = ratio - lag2,
+         tm3 = ratio - lag3) %>% 
+  ungroup() %>% 
+  filter(event == 1) %>% 
+  mutate(tm0 = 0) %>% 
+  # filter(tenure == "owned" | tenure == "rent") %>% 
+  unite(tpp, c("tenure", "crisis", "parity"), sep = "", remove = FALSE) %>% 
+  unite(tp, c("tenure","parity"), sep = "", remove = FALSE) %>% 
+  group_by(tenure, period) %>% 
+  summarise(tm0 = mean(tm0), tm1 = mean(tm1, na.rm = TRUE), tm2 = mean(tm2, na.rm = TRUE), tm3 = mean(tm3, na.rm = TRUE)) %>% 
+  pivot_longer(cols = c("tm0", "tm1", "tm2", "tm3"), names_to = "tm", values_to = "tmnum")
+
+hhpart4lag %>% 
+  mutate(tm = case_when(tm == "tm3" ~ "-3",
+                        tm == "tm2" ~ "-2",
+                        tm == "tm1" ~ "-1",
+                        tm ==  "tm0" ~ "0"),
+         tm = fct_relevel(tm, c("-3", "-2", "-1", "0")),) %>% 
+  ggplot(aes(x = tm, y = tmnum, group = tenure, color = tenure)) +
+  geom_line() +
+  facet_wrap(~period) +
+  theme_bw() +
+  scale_color_discrete(name = "Housing type", labels=c('Homeowner', 'Private rent', 'Social rent')) +
+  theme(legend.position = "bottom", legend.background = element_blank(),legend.box.background = element_rect(colour = "black"),
+        axis.text = element_text(size = 8), legend.title = element_text(size = 8), axis.title.y = element_text(size = 8),
+        legend.text = element_text(size = 8), axis.title.x = element_text(size = 8), strip.text.x = element_text(size = 8),
+        plot.title = element_text(size = 10), plot.subtitle = element_text(size = 8)) +
+  theme(aspect.ratio = 1) +
+  labs(subtitle = "Years before birth") +
+  ggtitle("Change in housing expenditure as proportion of income") +
+  xlab("Years before birth") +
+  ylab("Change compared to year of birth")
+ggsave("change_before_birth_s17_24-03-2023.png", width = 10, height = 10, units = "in", dpi = 500)
+
+
+
+
+
+
+
 
